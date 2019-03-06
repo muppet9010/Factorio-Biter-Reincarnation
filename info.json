@@ -1,0 +1,11 @@
+{
+    "name": "biter_death_tree_explosion",
+    "version": "17.0.0",
+    "title": "Biter Death Tree Explosion",
+    "author": "Muppet9010",
+    "contact": "",
+    "homepage": "",
+    "factorio_version": "0.17",
+    "dependencies": ["base >= 0.17"],
+    "description": "On Biter deaths you get trees or explosions"
+}
