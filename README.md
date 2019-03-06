@@ -1,5 +1,6 @@
-# Factorio-Biter-Death-Tree-Explosion
+# Factorio-Biter-Reincarnation
 
-When a Biter or Spitter dies one or more trees will appear in their spot. Occasioanlly the deaths will cause an explosion and fire.
+When a Biter or Spitter dies it tries to reincarnate into the true perpetual enemy, a tree. Occasionally the very angry ones fail and burst into flames.
 
-The tree type (living and dead) is randomly selected based on approperiate types for the tile that the biter dies on. Only base game tiles and tree types are supported. When the death is on a player place floor the underlying tile type is used.
+The tree type (living and dead) will be biome appropriate for where the biter dies. Only base game tiles and tree types are supported as the mod uses the base game's map generation noise layers. When the death is on a player placed floor the underlying tile type is used.
+There is a 1% chance of a biter death causing a tree fire.

@@ -1,6 +1,6 @@
 local Constants = {}
 
-Constants.ModName = "XXXX"
+Constants.ModName = "biter_reincarnation"
 Constants.AssetModName = "__" .. Constants.ModName .. "__"
 
 return Constants

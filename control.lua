@@ -49,9 +49,9 @@ local function AddTileBasedTreeToPosition(surface, position)
         if logNonPositives then game.print("no tree was found") end
         return
     end
-    local newPosition = surface.find_non_colliding_position(treeType, position, 3, 0.1)
+    local newPosition = surface.find_non_colliding_position(treeType, position, 2, 0.3)
     if newPosition == nil then
-        game.print("No position for new tree found")
+        if logNonPositives then game.print("No position for new tree found") end
         return
     end
     local newTree = surface.create_entity{name=treeType, position=newPosition, force="neutral"}
@@ -63,6 +63,11 @@ local function AddTileBasedTreeToPosition(surface, position)
 end
 
 
+local function AddTreeFireToPosition(surface, targetPosition)
+    surface.create_entity{name="fire-flame-on-tree", position=targetPosition}
+end
+
+
 local function OnEntityDied(event)
     local diedEntity = event.entity
     if diedEntity.force ~= game.forces.enemy then return end
@@ -70,6 +75,9 @@ local function OnEntityDied(event)
     local surface = diedEntity.surface
     local targetPosition = diedEntity.position
     AddTileBasedTreeToPosition(surface, targetPosition)
+    if math.random(1,100) == 1 then
+        AddTreeFireToPosition(surface, targetPosition)
+    end
 end
 
 
