@@ -41,15 +41,15 @@ local function AddTileBasedTreeToPosition(surface, position)
     local tile = surface.get_tile(position)
     local tileData = TileData[tile.name]
     if tileData == nil then
-        tile = tile.hidden_tile
-        tileData = TileData[tile.name]
+        local tileName = tile.hidden_tile
+        tileData = TileData[tileName]
     end
     local treeType = GetTreeTypeForTileData(tileData)
     if treeType == nil then
         if logNonPositives then game.print("no tree was found") end
         return
     end
-    local newPosition = surface.find_non_colliding_position(treeType, position, 2, 0.3)
+    local newPosition = surface.find_non_colliding_position(treeType, position, 2, 0.2)
     if newPosition == nil then
         if logNonPositives then game.print("No position for new tree found") end
         return
@@ -75,10 +75,37 @@ local function OnEntityDied(event)
     local surface = diedEntity.surface
     local targetPosition = diedEntity.position
     AddTileBasedTreeToPosition(surface, targetPosition)
-    if math.random(1,100) == 1 then
+    if math.random() <= global.MOD.burstIntoFlamesChance then
         AddTreeFireToPosition(surface, targetPosition)
     end
 end
 
 
+local function UpdateSetting(settingName)
+	if settingName == "burst-into-flames-chance-percent" or settingName == nil then
+        global.MOD.burstIntoFlamesChance = tonumber(settings.global["burst-into-flames-chance-percent"].value) / 100
+	end
+end
+
+
+local function CreateGlobals()
+    if global.MOD == nil then global.MOD = {} end
+	if global.MOD.burstIntoFlamesChance == nil then global.MOD.burstIntoFlamesChance = 0 end
+end
+
+
+local function OnStartup()
+	CreateGlobals()
+	UpdateSetting(nil)
+end
+
+
+local function OnSettingChanged(event)
+	UpdateSetting(event.setting)
+end
+
+
+script.on_init(OnStartup)
+script.on_configuration_changed(OnStartup)
+script.on_event(defines.events.on_runtime_mod_setting_changed, OnSettingChanged)
 script.on_event(defines.events.on_entity_died, OnEntityDied)
