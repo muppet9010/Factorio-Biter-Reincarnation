@@ -4,3 +4,5 @@ When a Biter or Spitter dies it tries to reincarnate into the true perpetual ene
 
 The tree type (living and dead) will be biome appropriate for where the biter dies. Only base game tiles and tree types are supported as the mod uses the base game's map generation noise layer data. When the death is on a player placed ground type (floor) the underlying tile type is used.
 There is a configurable (1% default) chance of a biter death causing a tree fire at that spot.
+
+Currently doesn't support modded tiles or trees.
