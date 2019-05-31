@@ -10,7 +10,7 @@ local logPositives = false
 Trees.PopulateTreeData = function()
     global.TreeData = {}
 
-    local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range)
+    local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range, probability)
         local treeDetail = {}
         treeDetail.name = name
         treeDetail.tempRange = {
@@ -21,6 +21,7 @@ Trees.PopulateTreeData = function()
             water_optimal - (water_range),
             water_optimal + (water_range)
         }
+        treeDetail.probability = probability
         global.TreeData[treeDetail.name] = treeDetail
     end
 
@@ -33,7 +34,7 @@ Trees.PopulateTreeData = function()
                 end
             end
             if autoplace ~= nil then
-                AddTree(prototype.name, autoplace.temperature_optimal, autoplace.temperature_range, autoplace.water_optimal, autoplace.water_range)
+                AddTree(prototype.name, autoplace.temperature_optimal, autoplace.temperature_range, autoplace.water_optimal, autoplace.water_range, prototype.autoplace_specification.max_probability)
             end
         end
     end
@@ -57,9 +58,16 @@ local function GetRandomTreeTypeForTileData(tileData)
     local tileMoisture = GetRandomFloatInRange(moistureRange[1], moistureRange[2])
 
     local suitableTrees = {}
+    local currentChance = 0
     for _, tree in pairs(global.TreeData) do
         if tree.tempRange[1] <= tileTemp and tree.tempRange[2] >= tileTemp and tree.moistureRange[1] <= tileMoisture and tree.moistureRange[2] >= tileMoisture then
-            table.insert(suitableTrees, tree)
+            local treeEntry = {
+                chanceStart = currentChance,
+                chanceEnd = currentChance + tree.probability,
+                tree = tree
+            }
+            table.insert(suitableTrees, treeEntry)
+            currentChance = treeEntry.chanceEnd
         end
     end
     if #suitableTrees == 0 then
@@ -72,8 +80,15 @@ local function GetRandomTreeTypeForTileData(tileData)
         game.print("trees found for conditions: tile: " .. tileData.name .. "   temp: " .. tileTemp .. "    moisture: " .. tileMoisture)
     end
 
-    local selectedTree = suitableTrees[math.random(1, #suitableTrees)]
-    return selectedTree.name
+    local highestChance = suitableTrees[#suitableTrees].chanceEnd
+    local chanceValue = math.random() * highestChance
+    for _, treeEntry in pairs(suitableTrees) do
+        if chanceValue >= treeEntry.chanceStart and chanceValue <= treeEntry.chanceEnd then
+            return treeEntry.tree.name
+        end
+    end
+
+    return nil
 end
 
 Trees.GetRandomTreeTypeForPosition = function(surface, position)

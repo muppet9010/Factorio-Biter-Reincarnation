@@ -5,6 +5,7 @@ Date: 2019-05-31
     - Add setting for enemy units chance of turning in to tree on death.
   Changes:
     - Add script interface for using the entity generation logic.
+    - Tree data is obtained from data so supports modded trees (not modded tiles).
   Bugfixes:
   Info:
     - Burning tree chance setting wording changed to make consistent with new settings.
