@@ -14,14 +14,18 @@ end
 
 
 local tileDetails = {}
-local function AddTileDetails(tileName, _, range1, range2)
-    local tempRanges = {SortLowHigh(range1[1])}
-    local moistureRanges = {SortLowHigh(range1[2])}
+local function AddTileDetails(tileName, type, range1, range2)
+    local tempRanges = nil
+    local moistureRanges = nil
+    if range1 ~= nil then
+        tempRanges = {SortLowHigh(range1[1])}
+        moistureRanges = {SortLowHigh(range1[2])}
+    end
     if range2 ~= nil then
         table.insert(tempRanges, SortLowHigh(range2[1]))
         table.insert(moistureRanges, SortLowHigh(range2[2]))
     end
-    tileDetails[tileName] = {name = tileName, tempRanges = tempRanges, moistureRanges = moistureRanges}
+    tileDetails[tileName] = {name = tileName, type = type, tempRanges = tempRanges, moistureRanges = moistureRanges}
 end
 
 
@@ -44,7 +48,11 @@ AddTileDetails("red-desert-0", "desert", {{0.55, 0.35}, {1, 0.5}})
 AddTileDetails("red-desert-1", "desert", {{0.6, 0}, {0.7, 0.3}}, {{0.7, 0.25}, {1, 0.3}})
 AddTileDetails("red-desert-2", "desert", {{0.7, 0}, {0.8, 0.25}}, {{0.8, 0.2}, {1, 0.25}})
 AddTileDetails("red-desert-3", "desert", {{0.8, 0}, {1, 0.2}})
-
-
+AddTileDetails("water", "water")
+AddTileDetails("deepwater", "water")
+AddTileDetails("water-green", "water")
+AddTileDetails("deepwater-green", "water")
+AddTileDetails("water-shallow", "water")
+AddTileDetails("water-mud", "water")
 
 return tileDetails

@@ -1,10 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.1
-Date: XXXXXXX
+Date: 2019-05-31
   Features:
+    - Add setting for enemy units chance of turning in to tree on death.
   Changes:
+    - Add script interface for using the entity generation logic.
   Bugfixes:
   Info:
+    - Burning tree chance setting wording changed to make consistent with new settings.
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.0
 Date: 2019-03-11
