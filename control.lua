@@ -30,6 +30,7 @@ local function UpdateSetting(settingName)
 end
 
 local function CreateGlobals()
+    global.TreeData = global.TreeData or {}
     global.treeOnDeathChance = global.treeOnDeathChance or 0
     global.burningTreeOnDeathChance = global.burningTreeOnDeathChance or 0
 end
@@ -37,6 +38,7 @@ end
 local function OnStartup()
     CreateGlobals()
     UpdateSetting(nil)
+    Trees.PopulateTreeData()
 end
 
 local function OnSettingChanged(event)

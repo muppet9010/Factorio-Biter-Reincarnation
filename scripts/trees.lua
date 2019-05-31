@@ -1,9 +1,45 @@
-local TreeData = require("scripts/tree-data")
 local TileData = require("scripts/tile_data")
+
+
 
 local Trees = {}
 local logNonPositives = false
 local logPositives = false
+
+
+Trees.PopulateTreeData = function()
+    global.TreeData = {}
+
+    local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range)
+        local treeDetail = {}
+        treeDetail.name = name
+        treeDetail.tempRange = {
+            temperature_optimal - (temperature_range),
+            temperature_optimal + (temperature_range)
+        }
+        treeDetail.moistureRange = {
+            water_optimal - (water_range),
+            water_optimal + (water_range)
+        }
+        global.TreeData[treeDetail.name] = treeDetail
+    end
+
+    for _, prototype in pairs(game.entity_prototypes) do
+        if prototype.type == "tree" then
+            local autoplace = nil
+            for _, peak in pairs(prototype.autoplace_specification.peaks) do
+                if peak.temperature_optimal ~= nil then
+                    autoplace = peak
+                end
+            end
+            if autoplace ~= nil then
+                AddTree(prototype.name, autoplace.temperature_optimal, autoplace.temperature_range, autoplace.water_optimal, autoplace.water_range)
+            end
+        end
+    end
+
+    log(serpent.block(global.TreeData))
+end
 
 local function GetRandomFloatInRange(lower, upper)
     return lower + math.random() * (upper - lower)
@@ -21,7 +57,7 @@ local function GetRandomTreeTypeForTileData(tileData)
     local tileMoisture = GetRandomFloatInRange(moistureRange[1], moistureRange[2])
 
     local suitableTrees = {}
-    for _, tree in pairs(TreeData) do
+    for _, tree in pairs(global.TreeData) do
         if tree.tempRange[1] <= tileTemp and tree.tempRange[2] >= tileTemp and tree.moistureRange[1] <= tileMoisture and tree.moistureRange[2] >= tileMoisture then
             table.insert(suitableTrees, tree)
         end
