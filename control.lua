@@ -22,7 +22,7 @@ local function OnEntityDied(event)
             if createdTree ~= nil then
                 targetPosition = createdTree.position
             end
-            Trees.AddTreeFireToPosition(createdTree.surface, targetPosition)
+            Trees.AddTreeFireToPosition(surface, targetPosition)
         end
     end
 end
