@@ -62,3 +62,9 @@ remote.add_interface("biter_reincarnation",
         return Trees.AddTreeFireToPosition(surface, position)
     end
 })
+
+--TESTIGN REMOVE ME
+--[[script.on_nth_tick(215, function()
+    OnStartup()
+    script.on_nth_tick(215, nil)
+end)]]

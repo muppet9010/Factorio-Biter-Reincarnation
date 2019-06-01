@@ -1,29 +1,18 @@
---Raw data lifted from base\prototypes\tile\tiles.lua, version 17.5
+--Raw data lifted from base\prototypes\tile\tiles.lua, version 17.44
 
-
-
-local function SortLowHigh(values)
-    local val1 = values[1]
-    local val2 = values[2]
-    if val1 <= val2 then
-        return {val1, val2}
-    else
-        return {val2, val1}
-    end
-end
 
 
 local tileDetails = {}
 local function AddTileDetails(tileName, type, range1, range2)
-    local tempRanges = nil
-    local moistureRanges = nil
+    local tempRanges = {}
+    local moistureRanges = {}
     if range1 ~= nil then
-        tempRanges = {SortLowHigh(range1[1])}
-        moistureRanges = {SortLowHigh(range1[2])}
+        table.insert(tempRanges, {range1[1][1], range1[2][1]})
+        table.insert(moistureRanges, {range1[1][2], range1[2][2]})
     end
     if range2 ~= nil then
-        table.insert(tempRanges, SortLowHigh(range2[1]))
-        table.insert(moistureRanges, SortLowHigh(range2[2]))
+        table.insert(tempRanges, {range2[1][1], range2[2][1]})
+        table.insert(moistureRanges, {range2[1][2], range2[2][2]})
     end
     tileDetails[tileName] = {name = tileName, type = type, tempRanges = tempRanges, moistureRanges = moistureRanges}
 end

@@ -14,12 +14,12 @@ Trees.PopulateTreeData = function()
         local treeDetail = {}
         treeDetail.name = name
         treeDetail.tempRange = {
-            temperature_optimal - (temperature_range),
-            temperature_optimal + (temperature_range)
+            temperature_optimal - (temperature_range * 1.5),
+            temperature_optimal + (temperature_range * 1.5)
         }
         treeDetail.moistureRange = {
-            water_optimal - (water_range),
-            water_optimal + (water_range)
+            water_optimal - (water_range * 1.5),
+            water_optimal + (water_range * 1.5)
         }
         treeDetail.probability = probability
         global.TreeData[treeDetail.name] = treeDetail
@@ -54,7 +54,7 @@ local function GetRandomTreeTypeForTileData(tileData)
     local tempRange = tileData.tempRanges[rangeInt]
     local moistureRange = tileData.moistureRanges[rangeInt]
     local tempScaleMultiplyer = GetRandomFloatInRange(tempRange[1], tempRange[2])
-    local tileTemp = 35 - (tempScaleMultiplyer * 35)
+    local tileTemp = math.max(5, (tempScaleMultiplyer * 35))
     local tileMoisture = GetRandomFloatInRange(moistureRange[1], moistureRange[2])
 
     local suitableTrees = {}
