@@ -6,4 +6,4 @@ The chance of a tree or burning tree appearing on enemy unit death is fully conf
 
 A script interface is included to allow other mods to utilise the logic. See the end of control.lua for the remote interface registration.
 
-Currently doesn't support modded tiles and so new landscpae mods aren't supported.
+Currently doesn't support modded tiles and so new landscape mods aren't supported.
