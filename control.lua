@@ -1,4 +1,5 @@
 local Trees = require("scripts/trees")
+local Utils = require("utility/utils")
 
 local function OnEntityDied(event)
     local diedEntity = event.entity
@@ -10,22 +11,35 @@ local function OnEntityDied(event)
     end
     local surface = diedEntity.surface
     local targetPosition = diedEntity.position
-    if math.random() <= global.treeOnDeathChance then
+    local random = math.random()
+    local chance = global.treeOnDeathChance
+    if Utils.FuzzyCompareDoubles(random, "<", chance) then
         Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
-    elseif math.random() <= global.burningTreeOnDeathChance then
-        local createdTree = Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
-        if createdTree ~= nil then
-            Trees.AddTreeFireToPosition(createdTree.surface, createdTree.position)
+    else
+        chance = chance + global.burningTreeOnDeathChance
+        if Utils.FuzzyCompareDoubles(random, "<", chance) then
+            local createdTree = Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
+            if createdTree ~= nil then
+                targetPosition = createdTree.position
+            end
+            Trees.AddTreeFireToPosition(createdTree.surface, targetPosition)
         end
     end
 end
 
 local function UpdateSetting(settingName)
     if settingName == "burst-into-flames-chance-percent" or settingName == nil then
-        global.burningTreeOnDeathChance = tonumber(settings.global["burst-into-flames-chance-percent"].value) / 100
+        global.burningTreeOnDeathChance = tonumber(settings.global["burst-into-flames-chance-percent"].value)/100
     end
     if settingName == "turn-to-tree-chance-percent" or settingName == nil then
-        global.treeOnDeathChance = tonumber(settings.global["turn-to-tree-chance-percent"].value) / 100
+        global.treeOnDeathChance = tonumber(settings.global["turn-to-tree-chance-percent"].value)/100
+    end
+
+    local totalChance = global.burningTreeOnDeathChance + global.treeOnDeathChance
+    if totalChance > 1 then
+        local multiplier = 1 / totalChance
+        global.burningTreeOnDeathChance = global.burningTreeOnDeathChance * multiplier
+        global.treeOnDeathChance = global.treeOnDeathChance * multiplier
     end
 end
 
@@ -64,7 +78,7 @@ remote.add_interface("biter_reincarnation",
 })
 
 --TESTIGN REMOVE ME
---[[script.on_nth_tick(215, function()
+--[[script.on_nth_tick(240, function()
     OnStartup()
-    script.on_nth_tick(215, nil)
+    script.on_nth_tick(240, nil)
 end)]]

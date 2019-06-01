@@ -7,6 +7,7 @@ Date: 2019-05-31
     - Add script interface for using the entity generation logic.
     - Tree data is obtained from data so supports modded trees (not modded tiles).
     - Tree type selection respects tree probability so tree mix should match local natural forests more.
+    - Combined chance of events occuring can be greater than 100%. The ratio of values will be utilised. Below 100% chance means possibility of no event happening.
   Bugfixes:
     - Fixed incorrect tile data handling and manual adjustment code. The trees should be basically correct on all tile types now.
   Info:

@@ -1,4 +1,5 @@
 local TileData = require("scripts/tile_data")
+local Utils = require("utility/utils")
 
 
 
@@ -42,10 +43,6 @@ Trees.PopulateTreeData = function()
     log(serpent.block(global.TreeData))
 end
 
-local function GetRandomFloatInRange(lower, upper)
-    return lower + math.random() * (upper - lower)
-end
-
 local function GetRandomTreeTypeForTileData(tileData)
     if tileData.type == "water" then
         return nil
@@ -53,9 +50,9 @@ local function GetRandomTreeTypeForTileData(tileData)
     local rangeInt = math.random(1, #tileData.tempRanges)
     local tempRange = tileData.tempRanges[rangeInt]
     local moistureRange = tileData.moistureRanges[rangeInt]
-    local tempScaleMultiplyer = GetRandomFloatInRange(tempRange[1], tempRange[2])
+    local tempScaleMultiplyer = Utils.GetRandomFloatInRange(tempRange[1], tempRange[2])
     local tileTemp = math.max(5, (tempScaleMultiplyer * 35))
-    local tileMoisture = GetRandomFloatInRange(moistureRange[1], moistureRange[2])
+    local tileMoisture = Utils.GetRandomFloatInRange(moistureRange[1], moistureRange[2])
 
     local suitableTrees = {}
     local currentChance = 0
