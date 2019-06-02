@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 17.0.3
+Date: 2019-06-02
+  Features:
+    - Add option to disable biters reincarnate from fire death
+    - Add option to set how many times a tree fire can jump
+  Changes:
+  Bugfixes:
+  Info:
+    - remove erronous logging
+---------------------------------------------------------------------------------------------------
 Version: 17.0.2
 Date: 2019-05-31
   Features:

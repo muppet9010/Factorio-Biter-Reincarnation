@@ -1,16 +1,9 @@
 local Trees = require("scripts/trees")
 local Utils = require("utility/utils")
 
-local function OnEntityDied(event)
-    local diedEntity = event.entity
-    if diedEntity.force ~= game.forces.enemy then
-        return
-    end
-    if diedEntity.type ~= "unit" then
-        return
-    end
-    local surface = diedEntity.surface
-    local targetPosition = diedEntity.position
+local function BiterDied(entity)
+    local surface = entity.surface
+    local targetPosition = entity.position
     local random = math.random()
     local chance = global.treeOnDeathChance
     if Utils.FuzzyCompareDoubles(random, "<", chance) then
@@ -27,12 +20,33 @@ local function OnEntityDied(event)
     end
 end
 
+local function OnEntityDamaged(event)
+    local entity = event.entity
+    if entity.health > 0 then
+        return
+    end
+    if entity.force ~= game.forces.enemy then
+        return
+    end
+    if entity.type ~= "unit" then
+        return
+    end
+
+    if global.preventBitersReincarnatingFromFireDeath and event.damage_type.name == "fire" then
+        return
+    end
+    BiterDied(entity)
+end
+
 local function UpdateSetting(settingName)
     if settingName == "burst-into-flames-chance-percent" or settingName == nil then
-        global.burningTreeOnDeathChance = tonumber(settings.global["burst-into-flames-chance-percent"].value)/100
+        global.burningTreeOnDeathChance = tonumber(settings.global["burst-into-flames-chance-percent"].value) / 100
     end
     if settingName == "turn-to-tree-chance-percent" or settingName == nil then
-        global.treeOnDeathChance = tonumber(settings.global["turn-to-tree-chance-percent"].value)/100
+        global.treeOnDeathChance = tonumber(settings.global["turn-to-tree-chance-percent"].value) / 100
+    end
+    if settingName == "prevent-biters-reincarnating-from-fire-death" or settingName == nil then
+        global.preventBitersReincarnatingFromFireDeath = settings.global["prevent-biters-reincarnating-from-fire-death"].value
     end
 
     local totalChance = global.burningTreeOnDeathChance + global.treeOnDeathChance
@@ -47,6 +61,7 @@ local function CreateGlobals()
     global.TreeData = global.TreeData or {}
     global.treeOnDeathChance = global.treeOnDeathChance or 0
     global.burningTreeOnDeathChance = global.burningTreeOnDeathChance or 0
+    global.preventBitersReincarnatingFromFireDeath = global.preventBitersReincarnatingFromFireDeath or false
 end
 
 local function OnStartup()
@@ -62,23 +77,19 @@ end
 script.on_init(OnStartup)
 script.on_configuration_changed(OnStartup)
 script.on_event(defines.events.on_runtime_mod_setting_changed, OnSettingChanged)
-script.on_event(defines.events.on_entity_died, OnEntityDied)
+script.on_event(defines.events.on_entity_damaged, OnEntityDamaged)
 
-remote.add_interface("biter_reincarnation",
-{
-    get_random_tree_type_for_position = function(surface, position)
-        return Trees.GetRandomTreeTypeForPosition(surface, position)
-    end,
-    add_random_tile_based_tree_near_position = function(surface, position, distance)
-        return Trees.AddRandomTileBasedTreeNearPosition(surface, position, distance)
-    end,
-    add_tree_fire_to_position = function(surface, position)
-        return Trees.AddTreeFireToPosition(surface, position)
-    end
-})
-
---TESTIGN REMOVE ME
---[[script.on_nth_tick(240, function()
-    OnStartup()
-    script.on_nth_tick(240, nil)
-end)]]
+remote.add_interface(
+    "biter_reincarnation",
+    {
+        get_random_tree_type_for_position = function(surface, position)
+            return Trees.GetRandomTreeTypeForPosition(surface, position)
+        end,
+        add_random_tile_based_tree_near_position = function(surface, position, distance)
+            return Trees.AddRandomTileBasedTreeNearPosition(surface, position, distance)
+        end,
+        add_tree_fire_to_position = function(surface, position)
+            return Trees.AddTreeFireToPosition(surface, position)
+        end
+    }
+)

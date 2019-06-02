@@ -1,12 +1,10 @@
 local TileData = require("scripts/tile_data")
 local Utils = require("utility/utils")
 
-
-
 local Trees = {}
 local logNonPositives = false
 local logPositives = false
-
+local logData = false
 
 Trees.PopulateTreeData = function()
     global.TreeData = {}
@@ -40,7 +38,10 @@ Trees.PopulateTreeData = function()
         end
     end
 
-    log(serpent.block(global.TreeData))
+    if logData then
+        log(serpent.block(global.TreeData))
+        log(serpent.block(TileData))
+    end
 end
 
 local function GetRandomTreeTypeForTileData(tileData)
