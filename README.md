@@ -10,3 +10,4 @@ A script interface is included to allow other mods to utilise the logic. See the
 
 Currently doesn't support modded tiles and so new landscape mods aren't supported.
 Only reacts to units on the "enemy" force to avoid unintentional reactions to other mods. If there are mods that it should react to please request them.
+Some settings to control tree fire spread and biters reaction to fire death to aid compatibility with other mods.
