@@ -93,9 +93,3 @@ remote.add_interface(
         end
     }
 )
-
---TESTIGN REMOVE ME
---[[script.on_nth_tick(240, function()
-    OnStartup()
-    script.on_nth_tick(240, nil)
-end)]]
