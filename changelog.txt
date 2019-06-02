@@ -2,6 +2,7 @@
 Version: 17.0.3
 Date: 2019-06-02
   Features:
+    - Add option to disable biters reincarnate from fire death
   Changes:
   Bugfixes:
   Info:
