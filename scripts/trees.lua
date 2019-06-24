@@ -25,7 +25,7 @@ Trees.PopulateTreeData = function()
     end
 
     for _, prototype in pairs(game.entity_prototypes) do
-        if prototype.type == "tree" then
+        if prototype.type == "tree" and prototype.autoplace_specification ~= nil then
             local autoplace = nil
             for _, peak in pairs(prototype.autoplace_specification.peaks) do
                 if peak.temperature_optimal ~= nil then

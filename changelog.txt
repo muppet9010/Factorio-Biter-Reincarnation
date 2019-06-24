@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 17.0.4
+Date: 2019-06-24
+  Features:
+  Changes:
+  Bugfixes:
+    - Changed to work with mods that add new trees without autoplace settings. May no longer error with special mods that do their own map generation, but won't put the expected trees either.
+    - Set to be specifcially incompatible with Alien Biomes mod due to its custom tiles.
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 17.0.3
 Date: 2019-06-02
   Features:

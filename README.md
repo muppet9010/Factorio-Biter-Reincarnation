@@ -8,6 +8,8 @@ The chance of a tree or burning tree appearing on enemy unit death is fully conf
 
 A script interface is included to allow other mods to utilise the logic. See the end of control.lua for the remote interface registration.
 
-Currently doesn't support modded tiles and so new landscape mods aren't supported.
+Doesn't support modded tiles or mods that do their own map creation and so new landscape mods aren't supported.
 Only reacts to units on the "enemy" force to avoid unintentional reactions to other mods. If there are mods that it should react to please request them.
 Some settings to control tree fire spread and biters reaction to fire death to aid compatibility with other mods.
+
+Alient biomes isn't supported as I haven't worked out how to dynamically handle its various tile & tree environment variations.
