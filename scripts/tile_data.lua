@@ -1,7 +1,5 @@
 --Raw data lifted from base\prototypes\tile\tiles.lua, version 17.44
 
-
-
 local tileDetails = {}
 local function AddTileDetails(tileName, type, range1, range2)
     local tempRanges = {}
@@ -16,7 +14,6 @@ local function AddTileDetails(tileName, type, range1, range2)
     end
     tileDetails[tileName] = {name = tileName, type = type, tempRanges = tempRanges, moistureRanges = moistureRanges}
 end
-
 
 AddTileDetails("grass-1", "grass", {{0, 0.7}, {1, 1}})
 AddTileDetails("grass-2", "grass", {{0.45, 0.45}, {1, 0.8}})
@@ -43,5 +40,6 @@ AddTileDetails("water-green", "water")
 AddTileDetails("deepwater-green", "water")
 AddTileDetails("water-shallow", "water")
 AddTileDetails("water-mud", "water")
+AddTileDetails("out-of-map", "no-trees")
 
 return tileDetails

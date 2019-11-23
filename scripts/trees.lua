@@ -45,7 +45,7 @@ Trees.PopulateTreeData = function()
 end
 
 local function GetRandomTreeTypeForTileData(tileData)
-    if tileData.type == "water" then
+    if tileData.type == "water" or tileData.type == "no-trees" then
         return nil
     end
     local rangeInt = math.random(1, #tileData.tempRanges)
