@@ -32,7 +32,7 @@ local function OnEntityDamaged(event)
         return
     end
 
-    if global.preventBitersReincarnatingFromFireDeath and event.damage_type.name == "fire" then
+    if global.preventBitersReincarnatingFromFireDeath and (event.damage_type.name == "fire" or event.damage_type.name == "cold") then
         return
     end
     BiterDied(entity)

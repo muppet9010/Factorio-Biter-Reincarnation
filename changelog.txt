@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 17.0.6
+Date: 2019-12-
+  Features:
+  Changes:
+    - Don't reincarnate from fire also includes "cold" damage type used by Cold Biters mod.
+  Bugfixes:
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 17.0.5
 Date: 2019-11-23
   Features:
