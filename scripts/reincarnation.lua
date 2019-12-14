@@ -2,8 +2,9 @@ local Utils = require("utility/utils")
 local Events = require("utility/events")
 local EventScheduler = require("utility/event-scheduler")
 local Trees = require("scripts/trees")
---local Logging = require("utility/logging")
+local Logging = require("utility/logging")
 local Reincarnation = {}
+local maxQueueCyclesPerSecond = 4
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandler(defines.events.on_runtime_mod_setting_changed, "Reincarnation", Reincarnation.UpdateSetting)
@@ -13,8 +14,9 @@ end
 
 Reincarnation.OnStartup = function()
     Reincarnation.UpdateSetting(nil)
+    --Do at an offset from 0 to try and avoid bunching on other scheduled thigns ticks
     if not EventScheduler.IsEventScheduled("Reincarnation.ProcessReincarnationQueue", nil, nil) then
-        EventScheduler.ScheduleEvent(3 + game.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
+        EventScheduler.ScheduleEvent(6 + game.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
     end
 end
 
@@ -23,8 +25,11 @@ Reincarnation.CreateGlobals = function()
     global.burningTreeOnDeathChance = global.burningTreeOnDeathChance or 0
     global.preventBitersReincarnatingFromFireDeath = global.preventBitersReincarnatingFromFireDeath or false
     global.reincarnationQueue = global.reincarnationQueue or {}
-    global.maxReincarnationsPerSecond = global.maxReincarnationsPerSecond or 0
     global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0
+    global.reincarnationQueueToDoPerSecond = global.reincarnationQueueToDoPerSecond or 0
+    global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond or 0
+    global.reincarnationQueueCyclesPerSecond = global.reincarnationQueueCyclesPerSecond or 0
+    global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond or 0
     global.maxTicksWaitForReincarnation = global.maxTicksWaitForReincarnation or 0
 end
 
@@ -54,8 +59,11 @@ Reincarnation.UpdateSetting = function(event)
     end
 
     if settingName == "max_reincarnations_per_second" or settingName == nil then
-        global.maxReincarnationsPerSecond = settings.global["max_reincarnations_per_second"].value
-        global.reincarnationQueueProcessDelay = 60 / global.maxReincarnationsPerSecond
+        local perSecond = settings.global["max_reincarnations_per_second"].value
+        local cyclesPerSecond = math.min(perSecond, maxQueueCyclesPerSecond)
+        global.reincarnationQueueToDoPerSecond = perSecond
+        global.reincarnationQueueCyclesPerSecond = cyclesPerSecond
+        global.reincarnationQueueProcessDelay = math.floor(60 / cyclesPerSecond)
     end
 
     if settingName == "max_seconds_wait_for_reincarnation" or settingName == nil then
@@ -68,7 +76,20 @@ Reincarnation.AddReincarnatonToQueue = function(surface, position, type)
 end
 
 Reincarnation.ProcessReincarnationQueue = function()
-    EventScheduler.ScheduleEvent(3 + game.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
+    EventScheduler.ScheduleEvent(game.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
+    local debug = false
+    Logging.Log("", debug)
+
+    local doneThisCycle = 0
+    if global.reincarnationQueueCyclesDoneThisSecond >= global.reincarnationQueueCyclesPerSecond then
+        Logging.Log("reseting current global counts", debug)
+        global.reincarnationQueueDoneThisSecond = 0
+        global.reincarnationQueueCyclesDoneThisSecond = 0
+    end
+    local toDoThisCycle = math.floor((global.reincarnationQueueToDoPerSecond - global.reincarnationQueueDoneThisSecond) / (global.reincarnationQueueCyclesPerSecond - global.reincarnationQueueCyclesDoneThisSecond))
+    Logging.Log("toDoThisCycle: " .. toDoThisCycle .. " reached via...", debug)
+    Logging.Log("math.floor((" .. global.reincarnationQueueToDoPerSecond .. " - " .. global.reincarnationQueueDoneThisSecond .. ") / (" .. global.reincarnationQueueCyclesPerSecond .. " - " .. global.reincarnationQueueCyclesDoneThisSecond .. "))", debug)
+    global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
     for k, details in pairs(global.reincarnationQueue) do
         table.remove(global.reincarnationQueue, k)
         if details.loggedTick + global.maxTicksWaitForReincarnation >= game.tick then
@@ -82,6 +103,11 @@ Reincarnation.ProcessReincarnationQueue = function()
                 end
                 Trees.AddTreeFireToPosition(surface, targetPosition)
             end
+            doneThisCycle = doneThisCycle + 1
+            global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
+            Logging.Log("1 reincarnation done", debug)
+        end
+        if doneThisCycle >= toDoThisCycle then
             return
         end
     end
