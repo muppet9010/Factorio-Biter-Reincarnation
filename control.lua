@@ -20,15 +20,12 @@ local function BiterDied(entity)
     end
 end
 
-local function OnEntityDamaged(event)
+local function OnUnitEntityDamaged(event)
     local entity = event.entity
     if entity.health > 0 then
         return
     end
-    if entity.force ~= game.forces.enemy then
-        return
-    end
-    if entity.type ~= "unit" then
+    if entity.force.name ~= "enemy" then
         return
     end
 
@@ -55,6 +52,10 @@ local function UpdateSetting(settingName)
         global.burningTreeOnDeathChance = global.burningTreeOnDeathChance * multiplier
         global.treeOnDeathChance = global.treeOnDeathChance * multiplier
     end
+
+    --TODO
+    global.reincarnationsPerTickMax = 3
+    global.reincarnationsMaxWaitSeconds = 5
 end
 
 local function CreateGlobals()
@@ -77,7 +78,7 @@ end
 script.on_init(OnStartup)
 script.on_configuration_changed(OnStartup)
 script.on_event(defines.events.on_runtime_mod_setting_changed, OnSettingChanged)
-script.on_event(defines.events.on_entity_damaged, OnEntityDamaged)
+script.on_event(defines.events.on_entity_damaged, OnUnitEntityDamaged, {{filter = "type", type = "unit"}})
 
 remote.add_interface(
     "biter_reincarnation",

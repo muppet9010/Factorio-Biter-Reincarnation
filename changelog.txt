@@ -6,6 +6,7 @@ Date: 2019-12-
     - Don't reincarnate from fire also includes "cold" damage type used by Cold Biters mod.
   Bugfixes:
   Info:
+    - Uses event filter to reduce Entity Damaged calls
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.5
 Date: 2019-11-23
