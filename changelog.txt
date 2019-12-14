@@ -2,9 +2,10 @@
 Version: 17.0.6
 Date: 2019-12-
   Features:
+    - New features and changes to improve UPS on very high biter death maps
     - Added max concurrent reincarnations and reincarnation queue system with mod settings.
   Changes:
-    - Don't reincarnate from fire also includes "cold" damage type used by Cold Biters mod.
+    - Removed anti fire spread option & code as offerign it was causing big UPS issues when very high concurrent number of biters were being damaged. Use max fire spread option or limit chance of reincarnation into burning trees to prevent massive forest fires.
   Bugfixes:
   Info:
     - Uses event filter to reduce Entity Damaged calls

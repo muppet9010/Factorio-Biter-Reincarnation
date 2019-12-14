@@ -32,19 +32,18 @@ data:extend(
             setting_type = "runtime-global",
             order = "1002"
         },
-        {
+        --[[{
             name = "prevent-biters-reincarnating-from-fire-death",
             type = "bool-setting",
             default_value = false,
             setting_type = "runtime-global",
             order = "1003"
-        },
+        },]]
         {
             name = "max_reincarnations_per_second",
             type = "int-setting",
-            default_value = 3,
+            default_value = 10,
             minimum_value = 1,
-            maximum_value = 60,
             setting_type = "runtime-global",
             order = "1004"
         },

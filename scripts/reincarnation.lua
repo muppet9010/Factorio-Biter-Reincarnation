@@ -4,11 +4,12 @@ local EventScheduler = require("utility/event-scheduler")
 local Trees = require("scripts/trees")
 local Logging = require("utility/logging")
 local Reincarnation = {}
-local maxQueueCyclesPerSecond = 4
+local maxQueueCyclesPerSecond = 60
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandler(defines.events.on_runtime_mod_setting_changed, "Reincarnation", Reincarnation.UpdateSetting)
-    Events.RegisterHandler(defines.events.on_entity_damaged, "Reincarnation", Reincarnation.OnEntityDamagedUnit, "TypeIsUnit")
+    --Events.RegisterHandler(defines.events.on_entity_damaged, "Reincarnation", Reincarnation.OnEntityDamagedUnit, "TypeIsUnit")
+    Events.RegisterHandler(defines.events.on_entity_died, "Reincarnation", Reincarnation.OnEntityDiedUnit, "TypeIsUnit")
     EventScheduler.RegisterScheduledEventType("Reincarnation.ProcessReincarnationQueue", Reincarnation.ProcessReincarnationQueue)
 end
 
@@ -23,7 +24,7 @@ end
 Reincarnation.CreateGlobals = function()
     global.treeOnDeathChance = global.treeOnDeathChance or 0
     global.burningTreeOnDeathChance = global.burningTreeOnDeathChance or 0
-    global.preventBitersReincarnatingFromFireDeath = global.preventBitersReincarnatingFromFireDeath or false
+    --global.preventBitersReincarnatingFromFireDeath = global.preventBitersReincarnatingFromFireDeath or false
     global.reincarnationQueue = global.reincarnationQueue or {}
     global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0
     global.reincarnationQueueToDoPerSecond = global.reincarnationQueueToDoPerSecond or 0
@@ -54,10 +55,9 @@ Reincarnation.UpdateSetting = function(event)
         end
     end
 
-    if settingName == "prevent-biters-reincarnating-from-fire-death" or settingName == nil then
+    --[[if settingName == "prevent-biters-reincarnating-from-fire-death" or settingName == nil then
         global.preventBitersReincarnatingFromFireDeath = settings.global["prevent-biters-reincarnating-from-fire-death"].value
-    end
-
+    end]]
     if settingName == "max_reincarnations_per_second" or settingName == nil then
         local perSecond = settings.global["max_reincarnations_per_second"].value
         local cyclesPerSecond = math.min(perSecond, maxQueueCyclesPerSecond)
@@ -128,7 +128,7 @@ Reincarnation.BiterDied = function(entity)
     end
 end
 
-Reincarnation.OnEntityDamagedUnit = function(event)
+--[[Reincarnation.OnEntityDamagedUnit = function(event)
     local entity = event.entity
     if entity.health > 0 then
         return
@@ -137,6 +137,13 @@ Reincarnation.OnEntityDamagedUnit = function(event)
         return
     end
     if global.preventBitersReincarnatingFromFireDeath and (event.damage_type.name == "fire" or event.damage_type.name == "cold") then
+        return
+    end
+    Reincarnation.BiterDied(entity)
+end]]
+Reincarnation.OnEntityDiedUnit = function(event)
+    local entity = event.entity
+    if entity.force.name ~= "enemy" then
         return
     end
     Reincarnation.BiterDied(entity)
