@@ -6,24 +6,46 @@ local logNonPositives = false
 local logPositives = false
 local logData = false
 
+Trees.CreateGlobals = function()
+    global.TreeData = global.TreeData or {}
+end
+
+Trees.OnStartup = function()
+    remote.remove_interface("biter_reincarnation")
+    remote.add_interface(
+        "biter_reincarnation",
+        {
+            get_random_tree_type_for_position = function(surface, position)
+                return Trees.GetRandomTreeTypeForPosition(surface, position)
+            end,
+            add_random_tile_based_tree_near_position = function(surface, position, distance)
+                return Trees.AddRandomTileBasedTreeNearPosition(surface, position, distance)
+            end,
+            add_tree_fire_to_position = function(surface, position)
+                return Trees.AddTreeFireToPosition(surface, position)
+            end
+        }
+    )
+    Trees.PopulateTreeData()
+end
+
+local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range, probability)
+    local treeDetail = {}
+    treeDetail.name = name
+    treeDetail.tempRange = {
+        temperature_optimal - (temperature_range * 1.5),
+        temperature_optimal + (temperature_range * 1.5)
+    }
+    treeDetail.moistureRange = {
+        water_optimal - (water_range * 1.5),
+        water_optimal + (water_range * 1.5)
+    }
+    treeDetail.probability = probability
+    global.TreeData[treeDetail.name] = treeDetail
+end
+
 Trees.PopulateTreeData = function()
     global.TreeData = {}
-
-    local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range, probability)
-        local treeDetail = {}
-        treeDetail.name = name
-        treeDetail.tempRange = {
-            temperature_optimal - (temperature_range * 1.5),
-            temperature_optimal + (temperature_range * 1.5)
-        }
-        treeDetail.moistureRange = {
-            water_optimal - (water_range * 1.5),
-            water_optimal + (water_range * 1.5)
-        }
-        treeDetail.probability = probability
-        global.TreeData[treeDetail.name] = treeDetail
-    end
-
     for _, prototype in pairs(game.entity_prototypes) do
         if prototype.type == "tree" and prototype.autoplace_specification ~= nil then
             local autoplace = nil
@@ -37,7 +59,6 @@ Trees.PopulateTreeData = function()
             end
         end
     end
-
     if logData then
         log(serpent.block(global.TreeData))
         log(serpent.block(TileData))

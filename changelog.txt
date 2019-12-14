@@ -2,11 +2,13 @@
 Version: 17.0.6
 Date: 2019-12-
   Features:
+    - Added max concurrent reincarnations and reincarnation queue system with mod settings.
   Changes:
     - Don't reincarnate from fire also includes "cold" damage type used by Cold Biters mod.
   Bugfixes:
   Info:
     - Uses event filter to reduce Entity Damaged calls
+    - Restructure code to my modern style & utility functions
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.5
 Date: 2019-11-23
