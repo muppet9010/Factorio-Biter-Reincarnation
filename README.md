@@ -6,10 +6,12 @@ The tree type (living and dead) will be biome appropriate for where the biter di
 
 The chance of a tree or burning tree appearing on enemy unit death is fully configurable. Combined chance of events occuring can be greater than 100%. The ratio of values will be utilised. Below 100% chance means possibility of no event happening.
 
+There are mod settings to control the reincarnation queue. So you can limit the speed of reincarnation to avoid massive UPS drops.
+
 A script interface is included to allow other mods to utilise the logic. See the end of control.lua for the remote interface registration.
 
 Doesn't support modded tiles or mods that do their own map creation and so new landscape mods aren't supported.
 Only reacts to units on the "enemy" force to avoid unintentional reactions to other mods. If there are mods that it should react to please request them.
-Some settings to control tree fire spread and biters reaction to fire death to aid compatibility with other mods.
+Settings to control tree fire spread to aid compatibility with other mods and very high tree maps.
 
-Alient biomes isn't supported as I haven't worked out how to dynamically handle its various tile & tree environment variations.
+Alien biomes isn't supported as I haven't worked out how to dynamically handle its various tile & tree environment variations.

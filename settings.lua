@@ -27,17 +27,26 @@ data:extend(
             name = "burst-into-flames-chance-percent",
             type = "int-setting",
             default_value = 1,
-            minomum_value = 0,
+            minimum_value = 0,
             maximum_value = 100,
             setting_type = "runtime-global",
             order = "1002"
         },
         {
-            name = "prevent-biters-reincarnating-from-fire-death",
-            type = "bool-setting",
-            default_value = false,
+            name = "max_reincarnations_per_second",
+            type = "int-setting",
+            default_value = 10,
+            minimum_value = 1,
             setting_type = "runtime-global",
-            order = "1003"
+            order = "1004"
+        },
+        {
+            name = "max_seconds_wait_for_reincarnation",
+            type = "int-setting",
+            default_value = 5,
+            minimum_value = 1,
+            setting_type = "runtime-global",
+            order = "1005"
         }
     }
 )
