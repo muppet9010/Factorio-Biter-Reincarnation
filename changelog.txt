@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.6
-Date: 2019-12-
+Date: 2019-12-14
   Features:
     - New features and changes to improve UPS on very high biter death maps
     - Added max concurrent reincarnations and reincarnation queue system with mod settings.
