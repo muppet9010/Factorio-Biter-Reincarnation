@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 17.0.8
+Date: 2020-01-xx
+  Features:
+  Changes:
+  Bugfixes:
+    - "add_random_tile_based_tree_near_position" remote call didn't link to a valid function name before.
+    - fixed desync caused when other mods utilised the remote interface of this mod. Was incorrectly registered causing speradic availability.
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 17.0.7
 Date: 2020-01-04
   Features:

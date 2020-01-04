@@ -10,6 +10,7 @@ end
 
 local function OnLoad()
     Reincarnation.OnLoad()
+    Trees.OnLoad()
 end
 
 local function OnStartup()

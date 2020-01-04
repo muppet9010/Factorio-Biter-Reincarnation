@@ -1,5 +1,6 @@
 local TileData = require("scripts/tile_data")
 local Utils = require("utility/utils")
+--local Logging = require("utility/logging")
 
 local Trees = {}
 local logNonPositives = false
@@ -7,11 +8,14 @@ local logPositives = false
 local logData = false
 
 Trees.CreateGlobals = function()
-    global.TreeData = global.TreeData or {}
+    global.treeData = global.treeData or {}
 end
 
 Trees.OnStartup = function()
-    remote.remove_interface("biter_reincarnation")
+    Trees.PopulateTreeData()
+end
+
+Trees.OnLoad = function()
     remote.add_interface(
         "biter_reincarnation",
         {
@@ -19,14 +23,13 @@ Trees.OnStartup = function()
                 return Trees.GetRandomTreeTypeForPosition(surface, position)
             end,
             add_random_tile_based_tree_near_position = function(surface, position, distance)
-                return Trees.AddRandomTileBasedTreeNearPosition(surface, position, distance)
+                return Trees.AddTileBasedTreeNearPosition(surface, position, distance)
             end,
             add_tree_fire_to_position = function(surface, position)
                 return Trees.AddTreeFireToPosition(surface, position)
             end
         }
     )
-    Trees.PopulateTreeData()
 end
 
 local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range, probability)
@@ -41,11 +44,11 @@ local function AddTree(name, temperature_optimal, temperature_range, water_optim
         water_optimal + (water_range * 1.5)
     }
     treeDetail.probability = probability
-    global.TreeData[treeDetail.name] = treeDetail
+    global.treeData[treeDetail.name] = treeDetail
 end
 
 Trees.PopulateTreeData = function()
-    global.TreeData = {}
+    global.treeData = {}
     for _, prototype in pairs(game.entity_prototypes) do
         if prototype.type == "tree" and prototype.autoplace_specification ~= nil then
             local autoplace = nil
@@ -60,7 +63,7 @@ Trees.PopulateTreeData = function()
         end
     end
     if logData then
-        log(serpent.block(global.TreeData))
+        log(serpent.block(global.treeData))
         log(serpent.block(TileData))
     end
 end
@@ -78,7 +81,7 @@ local function GetRandomTreeTypeForTileData(tileData)
 
     local suitableTrees = {}
     local currentChance = 0
-    for _, tree in pairs(global.TreeData) do
+    for _, tree in pairs(global.treeData) do
         if tree.tempRange[1] <= tileTemp and tree.tempRange[2] >= tileTemp and tree.moistureRange[1] <= tileMoisture and tree.moistureRange[2] >= tileMoisture then
             local treeEntry = {
                 chanceStart = currentChance,
