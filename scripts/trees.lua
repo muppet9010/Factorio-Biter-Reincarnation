@@ -19,7 +19,7 @@ Trees.OnStartup = function()
                 return Trees.GetRandomTreeTypeForPosition(surface, position)
             end,
             add_random_tile_based_tree_near_position = function(surface, position, distance)
-                return Trees.AddRandomTileBasedTreeNearPosition(surface, position, distance)
+                return Trees.AddTileBasedTreeNearPosition(surface, position, distance)
             end,
             add_tree_fire_to_position = function(surface, position)
                 return Trees.AddTreeFireToPosition(surface, position)
