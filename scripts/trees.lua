@@ -66,7 +66,6 @@ Trees.PopulateTreeData = function()
 end
 
 local function GetRandomTreeTypeForTileData(tileData)
-    game.print(Utils.GetTableNonNilLength(global.treeData))
     if tileData.type == "water" or tileData.type == "no-trees" then
         return nil
     end
