@@ -16,6 +16,7 @@ Trees.OnStartup = function()
 end
 
 Trees.OnLoad = function()
+    remote.remove_interface("biter_reincarnation")
     remote.add_interface(
         "biter_reincarnation",
         {
