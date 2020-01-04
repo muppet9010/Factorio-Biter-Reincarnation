@@ -1,5 +1,6 @@
 local TileData = require("scripts/tile_data")
 local Utils = require("utility/utils")
+--local Logging = require("utility/logging")
 
 local Trees = {}
 local logNonPositives = false
@@ -11,7 +12,10 @@ Trees.CreateGlobals = function()
 end
 
 Trees.OnStartup = function()
-    remote.remove_interface("biter_reincarnation")
+    Trees.PopulateTreeData()
+end
+
+Trees.OnLoad = function()
     remote.add_interface(
         "biter_reincarnation",
         {
@@ -26,7 +30,6 @@ Trees.OnStartup = function()
             end
         }
     )
-    Trees.PopulateTreeData()
 end
 
 local function AddTree(name, temperature_optimal, temperature_range, water_optimal, water_range, probability)
