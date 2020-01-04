@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 17.0.7
+Date: 2020-01-04
+  Features:
+  Changes:
+  Bugfixes:
+    - Burning Tree reincarnation logic fixed to actually work
+    - Fix multiple setting changes stacking rather than being re-calculated
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 17.0.6
 Date: 2019-12-14
   Features:

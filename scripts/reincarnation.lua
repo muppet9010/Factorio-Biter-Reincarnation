@@ -21,8 +21,10 @@ Reincarnation.OnStartup = function()
 end
 
 Reincarnation.CreateGlobals = function()
-    global.treeOnDeathChance = global.treeOnDeathChance or 0
-    global.burningTreeOnDeathChance = global.burningTreeOnDeathChance or 0
+    global.rawTreeOnDeathChance = global.rawTreeOnDeathChance or 0
+    global.chanceTreeOnDeathChance = global.chanceTreeOnDeathChance or 0
+    global.rawBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance or 0
+    global.chanceBurningTreeOnDeathChance = global.chanceBurningTreeOnDeathChance or 0
     global.reincarnationQueue = global.reincarnationQueue or {}
     global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0
     global.reincarnationQueueToDoPerSecond = global.reincarnationQueueToDoPerSecond or 0
@@ -39,17 +41,17 @@ Reincarnation.UpdateSetting = function(event)
     end
 
     if settingName == "burst-into-flames-chance-percent" or settingName == nil then
-        global.burningTreeOnDeathChance = tonumber(settings.global["burst-into-flames-chance-percent"].value) / 100
+        global.rawBurningTreeOnDeathChance = tonumber(settings.global["burst-into-flames-chance-percent"].value) / 100
     end
     if settingName == "turn-to-tree-chance-percent" or settingName == nil then
-        global.treeOnDeathChance = tonumber(settings.global["turn-to-tree-chance-percent"].value) / 100
+        global.rawTreeOnDeathChance = tonumber(settings.global["turn-to-tree-chance-percent"].value) / 100
     end
     if settingName == "burst-into-flames-chance-percent" or settingName == "turn-to-tree-chance-percent" or settingName == nil then
-        local totalChance = global.burningTreeOnDeathChance + global.treeOnDeathChance
+        local totalChance = global.rawBurningTreeOnDeathChance + global.rawTreeOnDeathChance
         if totalChance > 1 then
             local multiplier = 1 / totalChance
-            global.burningTreeOnDeathChance = global.burningTreeOnDeathChance * multiplier
-            global.treeOnDeathChance = global.treeOnDeathChance * multiplier
+            global.chanceBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance * multiplier
+            global.chanceTreeOnDeathChance = global.rawTreeOnDeathChance * multiplier
         end
     end
 
@@ -91,7 +93,7 @@ Reincarnation.ProcessReincarnationQueue = function()
             local surface, targetPosition, type = details.surface, details.position, details.type
             if type == "tree" then
                 Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
-            elseif type == "" then
+            elseif type == "burningTree" then
                 local createdTree = Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
                 if createdTree ~= nil then
                     targetPosition = createdTree.position
@@ -112,11 +114,11 @@ Reincarnation.BiterDied = function(entity)
     local surface = entity.surface
     local targetPosition = entity.position
     local random = math.random()
-    local chance = global.treeOnDeathChance
+    local chance = global.chanceTreeOnDeathChance
     if Utils.FuzzyCompareDoubles(random, "<", chance) then
         Reincarnation.AddReincarnatonToQueue(surface, targetPosition, "tree")
     else
-        chance = chance + global.burningTreeOnDeathChance
+        chance = chance + global.chanceBurningTreeOnDeathChance
         if Utils.FuzzyCompareDoubles(random, "<", chance) then
             Reincarnation.AddReincarnatonToQueue(surface, targetPosition, "burningTree")
         end

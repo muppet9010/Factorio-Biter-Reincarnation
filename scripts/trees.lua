@@ -151,7 +151,9 @@ Trees.AddTileBasedTreeNearPosition = function(surface, position, distance)
 end
 
 Trees.AddTreeFireToPosition = function(surface, targetPosition)
-    return surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
+    --make 2 lots of fire to ensure the tree catches fire
+    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
+    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
 end
 
 return Trees
