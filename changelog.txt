@@ -1,6 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 17.0.9
+Date: 2020-01-04
+  Features:
+  Changes:
+    - Add support for landfill. As its mainly stone its the same as a dry desert tree types.
+  Bugfixes:
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 17.0.8
-Date: 2020-01-xx
+Date: 2020-01-04
   Features:
   Changes:
   Bugfixes:

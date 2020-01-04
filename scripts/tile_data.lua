@@ -41,5 +41,6 @@ AddTileDetails("deepwater-green", "water")
 AddTileDetails("water-shallow", "water")
 AddTileDetails("water-mud", "water")
 AddTileDetails("out-of-map", "no-trees")
+AddTileDetails("landfill", "landfill", {{0, 0}, {0.25, 0.15}}) --same as sand-1
 
 return tileDetails
