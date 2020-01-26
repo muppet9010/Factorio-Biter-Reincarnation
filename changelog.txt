@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 18.0.10
+Date: 2020-01-26
+  Features:
+    - Updated to Factorio 0.18 as-is
+  Changes:
+  Bugfixes:
+    - fix reincarnation chances not being updated after mod setting changes if total chance was below 100%.
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 17.0.9
 Date: 2020-01-04
   Features:

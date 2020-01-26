@@ -48,11 +48,12 @@ Reincarnation.UpdateSetting = function(event)
     end
     if settingName == "burst-into-flames-chance-percent" or settingName == "turn-to-tree-chance-percent" or settingName == nil then
         local totalChance = global.rawBurningTreeOnDeathChance + global.rawTreeOnDeathChance
+        local multiplier = 1
         if totalChance > 1 then
-            local multiplier = 1 / totalChance
-            global.chanceBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance * multiplier
-            global.chanceTreeOnDeathChance = global.rawTreeOnDeathChance * multiplier
+            multiplier = multiplier / totalChance
         end
+        global.chanceBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance * multiplier
+        global.chanceTreeOnDeathChance = global.rawTreeOnDeathChance * multiplier
     end
 
     if settingName == "max_reincarnations_per_second" or settingName == nil then
