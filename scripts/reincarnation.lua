@@ -1,8 +1,9 @@
 local Utils = require("utility/utils")
 local Events = require("utility/events")
 local EventScheduler = require("utility/event-scheduler")
-local Trees = require("scripts/trees")
 local Logging = require("utility/logging")
+local BiomeTrees = require("utility/functions/biome-trees")
+
 local Reincarnation = {}
 local maxQueueCyclesPerSecond = 60
 
@@ -93,13 +94,13 @@ Reincarnation.ProcessReincarnationQueue = function()
         if details.loggedTick + global.maxTicksWaitForReincarnation >= game.tick then
             local surface, targetPosition, type = details.surface, details.position, details.type
             if type == "tree" then
-                Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
+                BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
             elseif type == "burningTree" then
-                local createdTree = Trees.AddTileBasedTreeNearPosition(surface, targetPosition, 2)
+                local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
                 if createdTree ~= nil then
                     targetPosition = createdTree.position
                 end
-                Trees.AddTreeFireToPosition(surface, targetPosition)
+                Reincarnation.AddTreeFireToPosition(surface, targetPosition)
             end
             doneThisCycle = doneThisCycle + 1
             global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
@@ -132,6 +133,12 @@ Reincarnation.OnEntityDiedUnit = function(event)
         return
     end
     Reincarnation.BiterDied(entity)
+end
+
+Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
+    --make 2 lots of fire to ensure the tree catches fire
+    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
+    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
 end
 
 return Reincarnation

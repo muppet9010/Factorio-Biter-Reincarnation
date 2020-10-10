@@ -4,7 +4,10 @@ Date: 2020-xxxxxxx
   Features:
   Changes:
   Bugfixes:
+    - Support the new nuclear-ground tile type. Treated the same as landfil, like the dryest sand.
   Info:
+    - Removed the biter_reincarnation remote interface as the functionality is included in my main utility library. No current other mod versions utilised the interface.
+    - Moved to using the tree generation code from my main utility library.
 ---------------------------------------------------------------------------------------------------
 Version: 18.0.10
 Date: 2020-01-26

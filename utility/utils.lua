@@ -2,12 +2,12 @@ local Utils = {}
 --local Logging = require("utility/logging")
 local factorioUtil = require("__core__/lualib/util")
 Utils.DeepCopy = factorioUtil.table.deepcopy
-Utils.TableMerge = factorioUtil.merge
+Utils.TableMerge = factorioUtil.merge -- takes an array of tables and returns a new table with copies of their contents
 
-function Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, killerEntity, collisionBoxOnlyEntities)
+function Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, killerEntity, collisionBoxOnlyEntities, force)
     local entitiesFound = surface.find_entities(positionedBoundingBox)
     for k, entity in pairs(entitiesFound) do
-        if entity.valid then
+        if entity.valid and (force == nil or entity.force == force) then
             if entity.health ~= nil and entity.destructible and ((collisionBoxOnlyEntities and Utils.IsCollisionBoxPopulated(entity.prototype.collision_box)) or (not collisionBoxOnlyEntities)) then
                 if killerEntity ~= nil then
                     entity.die("neutral", killerEntity)
@@ -19,10 +19,10 @@ function Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, kill
     end
 end
 
-function Utils.KillAllObjectsInArea(surface, positionedBoundingBox, killerEntity)
+function Utils.KillAllObjectsInArea(surface, positionedBoundingBox, killerEntity, force)
     local entitiesFound = surface.find_entities(positionedBoundingBox)
     for k, entity in pairs(entitiesFound) do
-        if entity.valid then
+        if entity.valid and (force == nil or entity.force == force) then
             if entity.destructible then
                 if killerEntity ~= nil then
                     entity.die("neutral", killerEntity)
@@ -30,28 +30,28 @@ function Utils.KillAllObjectsInArea(surface, positionedBoundingBox, killerEntity
                     entity.die("neutral")
                 end
             else
-                entity.destroy({dp_cliff_correction = true, raise_destroy = false})
+                entity.destroy({dp_cliff_correction = true, raise_destroy = true})
             end
         end
     end
 end
 
-function Utils.DestroyAllKillableObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities)
+function Utils.DestroyAllKillableObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, force)
     local entitiesFound = surface.find_entities(positionedBoundingBox)
     for k, entity in pairs(entitiesFound) do
-        if entity.valid then
+        if entity.valid and (force == nil or entity.force == force) then
             if entity.health ~= nil and entity.destructible and ((collisionBoxOnlyEntities and Utils.IsCollisionBoxPopulated(entity.prototype.collision_box)) or (not collisionBoxOnlyEntities)) then
-                entity.destroy({dp_cliff_correction = true, raise_destroy = false})
+                entity.destroy({dp_cliff_correction = true, raise_destroy = true})
             end
         end
     end
 end
 
-function Utils.DestroyAllObjectsInArea(surface, positionedBoundingBox)
+function Utils.DestroyAllObjectsInArea(surface, positionedBoundingBox, force)
     local entitiesFound = surface.find_entities(positionedBoundingBox)
     for k, entity in pairs(entitiesFound) do
-        if entity.valid then
-            entity.destroy({dp_cliff_correction = true, raise_destroy = false})
+        if entity.valid and (force == nil or entity.force == force) then
+            entity.destroy({dp_cliff_correction = true, raise_destroy = true})
         end
     end
 end
@@ -80,7 +80,7 @@ function Utils.TableToProperPosition(thing)
     elseif thing.x ~= nil and thing.y ~= nil then
         return {x = thing.x, y = thing.y}
     else
-        return {x = thing[1], y = thing[1]}
+        return {x = thing[1], y = thing[2]}
     end
 end
 
@@ -113,6 +113,10 @@ function Utils.ApplyBoundingBoxToPosition(centrePos, boundingBox, orientation)
     else
         game.print("Error: Diagonal orientations not supported by Utils.ApplyBoundingBoxToPosition()")
     end
+end
+
+function Utils.RoundPosition(pos, numDecimalPlaces)
+    return {x = Utils.RoundNumberToDecimalPlaces(pos.x, numDecimalPlaces), y = Utils.RoundNumberToDecimalPlaces(pos.y, numDecimalPlaces)}
 end
 
 function Utils.GetChunkPositionForTilePosition(pos)
@@ -212,6 +216,29 @@ function Utils.RoundNumberToDecimalPlaces(num, numDecimalPlaces)
     return result
 end
 
+function Utils.LoopIntValueWithinRange(value, min, max)
+    if value > max then
+        return min - (max - value) - 1
+    elseif value < min then
+        return max + (value - min) + 1
+    else
+        return value
+    end
+end
+
+function Utils.HandleFloatNumberAsChancedValue(value)
+    local intValue = math.floor(value)
+    local partialValue = value - intValue
+    local chancedValue = intValue
+    if partialValue ~= 0 then
+        local rand = math.random()
+        if rand >= partialValue then
+            chancedValue = chancedValue + 1
+        end
+    end
+    return chancedValue
+end
+
 --This doesn't guarentee correct on some of the edge cases, but is as close as possible assuming that 1/256 is the variance for the same number (Bilka, Dev on Discord)
 function Utils.FuzzyCompareDoubles(num1, logic, num2)
     local numDif = num1 - num2
@@ -255,20 +282,18 @@ function Utils.FuzzyCompareDoubles(num1, logic, num2)
     end
 end
 
-function Utils.GetTableLength(table)
-    local count = 0
-    for _ in pairs(table) do
-        count = count + 1
+function Utils.IsTableEmpty(table)
+    if table == nil or next(table) == nil then
+        return true
+    else
+        return false
     end
-    return count
 end
 
 function Utils.GetTableNonNilLength(table)
     local count = 0
-    for k, v in pairs(table) do
-        if v ~= nil then
-            count = count + 1
-        end
+    for _ in pairs(table) do
+        count = count + 1
     end
     return count
 end
@@ -281,6 +306,16 @@ function Utils.GetMaxKey(table)
         end
     end
     return max_key
+end
+
+function Utils.GetTableValueByIndexCount(table, indexCount)
+    local count = 0
+    for _, v in pairs(table) do
+        count = count + 1
+        if count == indexCount then
+            return v
+        end
+    end
 end
 
 function Utils.CalculateBoundingBoxFromPositionAndRange(position, range)
@@ -345,50 +380,59 @@ function Utils.TableKeyToArray(aTable)
     return newArray
 end
 
-function Utils.TableContentsToJSON(target_table, name)
+function Utils.TableContentsToJSON(targetTable, name, singleLineOutput)
+    --targetTable is the only mandatory parameter. name if provided will appear as a "name:JSONData" output. singleLineOutput removes all lines and spacing from the output.
+    singleLineOutput = singleLineOutput or false
     local tablesLogged = {}
-    return Utils._TableContentsToJSON(target_table, name, tablesLogged)
+    return Utils._TableContentsToJSON(targetTable, name, singleLineOutput, tablesLogged)
 end
-function Utils._TableContentsToJSON(target_table, name, tablesLogged, indent, stop_traversing)
+function Utils._TableContentsToJSON(targetTable, name, singleLineOutput, tablesLogged, indent, stopTraversing)
+    local newLineCharacter = "\r\n"
     indent = indent or 1
     local indentstring = string.rep(" ", (indent * 4))
-    tablesLogged[target_table] = "logged"
+    if singleLineOutput then
+        newLineCharacter = ""
+        indentstring = ""
+    end
+    tablesLogged[targetTable] = "logged"
     local table_contents = ""
-    if Utils.GetTableLength(target_table) > 0 then
-        for k, v in pairs(target_table) do
+    if Utils.GetTableNonNilLength(targetTable) > 0 then
+        for k, v in pairs(targetTable) do
             local key, value
-            if type(k) == "string" or type(k) == "number" or type(k) == "boolean" then
+            if type(k) == "string" or type(k) == "number" or type(k) == "boolean" then -- keys are always strings
                 key = '"' .. tostring(k) .. '"'
             elseif type(k) == "nil" then
                 key = '"nil"'
             elseif type(k) == "table" then
-                if stop_traversing == true then
+                if stopTraversing == true then
                     key = '"CIRCULAR LOOP TABLE"'
                 else
-                    local sub_stop_traversing = nil
+                    local subStopTraversing = nil
                     if tablesLogged[k] ~= nil then
-                        sub_stop_traversing = true
+                        subStopTraversing = true
                     end
-                    key = "{\r\n" .. Utils._TableContentsToJSON(k, name, tablesLogged, indent + 1, sub_stop_traversing) .. "\r\n" .. indentstring .. "}"
+                    key = "{" .. newLineCharacter .. Utils._TableContentsToJSON(k, name, singleLineOutput, tablesLogged, indent + 1, subStopTraversing) .. newLineCharacter .. indentstring .. "}"
                 end
             elseif type(k) == "function" then
                 key = '"' .. tostring(k) .. '"'
             else
                 key = '"unhandled type: ' .. type(k) .. '"'
             end
-            if type(v) == "string" or type(v) == "number" or type(v) == "boolean" then
+            if type(v) == "string" then
                 value = '"' .. tostring(v) .. '"'
+            elseif type(v) == "number" or type(v) == "boolean" then
+                value = tostring(v)
             elseif type(v) == "nil" then
                 value = '"nil"'
             elseif type(v) == "table" then
-                if stop_traversing == true then
+                if stopTraversing == true then
                     value = '"CIRCULAR LOOP TABLE"'
                 else
-                    local sub_stop_traversing = nil
+                    local subStopTraversing = nil
                     if tablesLogged[v] ~= nil then
-                        sub_stop_traversing = true
+                        subStopTraversing = true
                     end
-                    value = "{\r\n" .. Utils._TableContentsToJSON(v, name, tablesLogged, indent + 1, sub_stop_traversing) .. "\r\n" .. indentstring .. "}"
+                    value = "{" .. newLineCharacter .. Utils._TableContentsToJSON(v, name, singleLineOutput, tablesLogged, indent + 1, subStopTraversing) .. newLineCharacter .. indentstring .. "}"
                 end
             elseif type(v) == "function" then
                 value = '"' .. tostring(v) .. '"'
@@ -396,7 +440,7 @@ function Utils._TableContentsToJSON(target_table, name, tablesLogged, indent, st
                 value = '"unhandled type: ' .. type(v) .. '"'
             end
             if table_contents ~= "" then
-                table_contents = table_contents .. "," .. "\r\n"
+                table_contents = table_contents .. "," .. newLineCharacter
             end
             table_contents = table_contents .. indentstring .. tostring(key) .. ":" .. tostring(value)
         end
@@ -406,9 +450,9 @@ function Utils._TableContentsToJSON(target_table, name, tablesLogged, indent, st
     if indent == 1 then
         local resultString = ""
         if name ~= nil then
-            resultString = resultString .. '"' .. name .. '":'
+            resultString = '"' .. name .. '":'
         end
-        resultString = resultString .. "{" .. "\r\n" .. table_contents .. "\r\n" .. "}"
+        resultString = resultString .. "{" .. newLineCharacter .. table_contents .. newLineCharacter .. "}"
         return resultString
     else
         return table_contents
@@ -428,6 +472,15 @@ function Utils.GetTableKeyWithValue(theTable, value)
     return nil
 end
 
+function Utils.GetTableKeyWithInnerKeyValue(theTable, key, value)
+    for i, innerTable in pairs(theTable) do
+        if innerTable[key] ~= nil and innerTable[key] == value then
+            return i
+        end
+    end
+    return nil
+end
+
 function Utils.GetRandomFloatInRange(lower, upper)
     return lower + math.random() * (upper - lower)
 end
@@ -440,61 +493,16 @@ function Utils.WasCreativeModeInstantDeconstructionUsed(event)
     end
 end
 
-function Utils.GetBiterType(modEnemyProbabilities, spawnerType, evolution)
-    --modEnemyProbabilities argument is a global variable thats passed in for the utility function can use. do not set in any way before hand.
-    modEnemyProbabilities = modEnemyProbabilities or {}
-    if modEnemyProbabilities[spawnerType] == nil then
-        modEnemyProbabilities[spawnerType] = {}
-    end
-    evolution = Utils.RoundNumberToDecimalPlaces(evolution, 2)
-    if modEnemyProbabilities[spawnerType].calculatedEvolution == nil or modEnemyProbabilities[spawnerType].calculatedEvolution == evolution then
-        modEnemyProbabilities[spawnerType].calculatedEvolution = evolution
-        modEnemyProbabilities[spawnerType].probabilities = Utils._CalculateSpecificBiterSelectionProbabilities(spawnerType, evolution)
-    end
-    return Utils.GetRandomEntryFromNormalisedDataSet(modEnemyProbabilities[spawnerType].probabilities, "chance").unit
-end
-
-function Utils._CalculateSpecificBiterSelectionProbabilities(spawnerType, currentEvolution)
-    local rawUnitProbs = game.entity_prototypes[spawnerType].result_units
-    local currentEvolutionProbabilities = {}
-    for _, possibility in pairs(rawUnitProbs) do
-        local startSpawnPointIndex = nil
-        for spawnPointIndex, spawnPoint in pairs(possibility.spawn_points) do
-            if spawnPoint.evolution_factor <= currentEvolution then
-                startSpawnPointIndex = spawnPointIndex
-            end
-        end
-        if startSpawnPointIndex ~= nil then
-            local startSpawnPoint = possibility.spawn_points[startSpawnPointIndex]
-            local endSpawnPoint
-            if possibility.spawn_points[startSpawnPointIndex + 1] ~= nil then
-                endSpawnPoint = possibility.spawn_points[startSpawnPointIndex + 1]
-            else
-                endSpawnPoint = {evolution_factor = 1.0, weight = startSpawnPoint.weight}
-            end
-
-            local weight
-            if startSpawnPoint.evolution_factor ~= endSpawnPoint.evolution_factor then
-                local evoRange = endSpawnPoint.evolution_factor - startSpawnPoint.evolution_factor
-                local weightRange = endSpawnPoint.weight - startSpawnPoint.weight
-                local evoRangeMultiplier = (currentEvolution - startSpawnPoint.evolution_factor) / evoRange
-                weight = (weightRange * evoRangeMultiplier) + startSpawnPoint.weight
-            else
-                weight = startSpawnPoint.weight
-            end
-            table.insert(currentEvolutionProbabilities, {chance = weight, unit = possibility.unit})
-        end
-    end
-    local normalisedcurrentEvolutionProbabilities = Utils.NormaliseChanceList(currentEvolutionProbabilities, "chance")
-    return normalisedcurrentEvolutionProbabilities
-end
-
-function Utils.NormaliseChanceList(dataSet, chancePropertyName)
+function Utils.NormaliseChanceList(dataSet, chancePropertyName, skipFillingEmptyChance)
+    --By default the dataSet's total chance is manipulated in to a 0-1 range. But if optional skipFillingEmptyChance is set to true then total chance below 1 will not be scaled up, so that nil results can be had in random selection.
     local totalChance = 0
     for _, v in pairs(dataSet) do
         totalChance = totalChance + v[chancePropertyName]
     end
-    local multiplier = 1 / totalChance
+    local multiplier = 1
+    if not skipFillingEmptyChance or (skipFillingEmptyChance and totalChance > 1) then
+        multiplier = 1 / totalChance
+    end
     for _, v in pairs(dataSet) do
         v[chancePropertyName] = v[chancePropertyName] * multiplier
     end
@@ -512,6 +520,7 @@ function Utils.GetRandomEntryFromNormalisedDataSet(dataSet, chancePropertyName)
         end
         chanceRangeLow = chanceRangeHigh
     end
+    return nil
 end
 
 function Utils.DisableSiloScript()
@@ -567,6 +576,9 @@ function Utils.PadNumberToMinimumDigits(input, requiredLength)
 end
 
 function Utils.DisplayNumberPretty(number)
+    if number == nil then
+        return ""
+    end
     local formatted = number
     local k
     while true do
@@ -579,6 +591,7 @@ function Utils.DisplayNumberPretty(number)
 end
 
 function Utils.DisplayTimeOfTicks(inputTicks, displayLargestTimeUnit, displaySmallestTimeUnit)
+    -- display time units: hour, minute, second
     if inputTicks == nil then
         return ""
     end
@@ -642,6 +655,7 @@ function Utils.DisplayTimeOfTicks(inputTicks, displayLargestTimeUnit, displaySma
 end
 
 function Utils._CreatePlacementTestEntityPrototype(entityToClone, newEntityName, subgroup, collisionMask)
+    --TODO: doesn't handle mipmaps at all presently. Also ignores any of the extra data in an icons table of "Types/IconData". Think this should just duplicate the target icons table entry.
     local clonedIcon = entityToClone.icon
     local clonedIconSize = entityToClone.icon_size
     if clonedIcon == nil then
@@ -737,6 +751,311 @@ function Utils.GetPositionForAngledDistance(startingPos, distance, angle)
         y = (distance * -math.cos(angleRad)) + startingPos.y
     }
     return newPos
+end
+
+function Utils.FindWhereLineCrossesCircle(radius, slope, yIntercept)
+    local centerPos = {x = 0, y = 0}
+    local A = 1 + slope * slope
+    local B = -2 * centerPos.x + 2 * slope * yIntercept - 2 * centerPos.y * slope
+    local C = centerPos.x * centerPos.x + yIntercept * yIntercept + centerPos.y * centerPos.y - 2 * centerPos.y * yIntercept - radius * radius
+    local delta = B * B - 4 * A * C
+
+    if delta < 0 then
+        return nil, nil
+    else
+        local x1 = (-B + math.sqrt(delta)) / (2 * A)
+
+        local x2 = (-B - math.sqrt(delta)) / (2 * A)
+
+        local y1 = slope * x1 + yIntercept
+
+        local y2 = slope * x2 + yIntercept
+
+        local pos1 = {x = x1, y = y1}
+        local pos2 = {x = x2, y = y2}
+        if pos1 == pos2 then
+            return pos1, nil
+        else
+            return pos1, pos2
+        end
+    end
+end
+
+function Utils.IsPositionWithinCircled(circleCenter, radius, position)
+    local deltaX = math.abs(position.x - circleCenter.x)
+    local deltaY = math.abs(position.y - circleCenter.y)
+    if deltaX + deltaY <= radius then
+        return true
+    elseif deltaX > radius then
+        return false
+    elseif deltaY > radius then
+        return false
+    elseif deltaX ^ 2 + deltaY ^ 2 <= radius ^ 2 then
+        return true
+    else
+        return false
+    end
+end
+
+Utils.GetValueAndUnitFromString = function(text)
+    return string.match(text, "%d+"), string.match(text, "%a+")
+end
+
+Utils.TryMoveInventoriesLuaItemStacks = function(sourceInventory, targetInventory, dropUnmovedOnGround, ratioToMove)
+    -- Moves the full Lua Item Stacks so handles items with data and other complicated items. Updates the passed in inventory object.
+    -- Returns true/false if all items were moved successfully.
+    local sourceOwner, itemAllMoved = nil, true
+    if dropUnmovedOnGround == nil then
+        dropUnmovedOnGround = false
+    end
+    if ratioToMove == nil then
+        ratioToMove = 1
+    end
+    if sourceInventory == nil or sourceInventory.is_empty() then
+        return itemAllMoved
+    end
+    for index = 1, #sourceInventory do
+        local itemStack = sourceInventory[index]
+        if itemStack.valid_for_read then
+            local toMoveCount = math.ceil(itemStack.count * ratioToMove)
+            local itemStackToMove = Utils.DeepCopy(itemStack)
+            itemStackToMove.count = toMoveCount
+            local movedCount = targetInventory.insert(itemStackToMove)
+            local remaining = itemStack.count - movedCount
+            if movedCount > 0 then
+                itemStack.count = remaining
+            end
+            if remaining > 0 then
+                itemAllMoved = false
+                if dropUnmovedOnGround then
+                    sourceOwner = sourceOwner or targetInventory.entity_owner or targetInventory.player_owner
+                    sourceOwner.surface.spill_item_stack(sourceOwner.position, {name = itemStack.name, count = remaining}, true, sourceOwner.force, false)
+                end
+            end
+        end
+    end
+
+    return itemAllMoved
+end
+
+Utils.TryTakeGridsItems = function(sourceGrid, targetInventory, dropUnmovedOnGround)
+    -- Can only move the item name and count via API, Facotrio doesn't support putting equipment objects in an inventory. Updates the passed in grid object.
+    -- Returns true/false if all items were moved successfully.
+    if sourceGrid == nil then
+        return
+    end
+    local sourceOwner, itemAllMoved = nil, true
+    if dropUnmovedOnGround == nil then
+        dropUnmovedOnGround = false
+    end
+    for _, equipment in pairs(sourceGrid.equipment) do
+        local moved = targetInventory.insert({name = equipment.name, count = 1})
+        if moved > 0 then
+            sourceGrid.take({equipment = equipment})
+        end
+        if moved == 0 then
+            itemAllMoved = false
+            if dropUnmovedOnGround then
+                sourceOwner = sourceOwner or targetInventory.entity_owner or targetInventory.player_owner
+                sourceOwner.surface.spill_item_stack(sourceOwner.position, {name = equipment.name, count = 1}, true, sourceOwner.force, false)
+            end
+        end
+    end
+    return itemAllMoved
+end
+
+Utils.TryInsertInventoryContents = function(contents, targetInventory, dropUnmovedOnGround, ratioToMove)
+    -- Just takes a list of item names and counts that you get from the inventory.get_contents(). Updates the passed in contents object.
+    -- Returns true/false if all items were moved successfully.
+    if contents == nil or #contents == 0 then
+        return
+    end
+    local sourceOwner, itemAllMoved = nil, true
+    if dropUnmovedOnGround == nil then
+        dropUnmovedOnGround = false
+    end
+    if ratioToMove == nil then
+        ratioToMove = 1
+    end
+    for name, count in pairs(contents) do
+        local toMove = math.ceil(count * ratioToMove)
+        local moved = targetInventory.insert({name = name, count = toMove})
+        local remaining = count - moved
+        if moved > 0 then
+            contents[name] = remaining
+        end
+        if remaining > 0 then
+            itemAllMoved = false
+            if dropUnmovedOnGround then
+                sourceOwner = sourceOwner or targetInventory.entity_owner or targetInventory.player_owner
+                sourceOwner.surface.spill_item_stack(sourceOwner.position, {name = name, count = remaining}, true, sourceOwner.force, false)
+            end
+        end
+    end
+    return itemAllMoved
+end
+
+Utils.TryInsertSimpleItems = function(contents, targetInventory, dropUnmovedOnGround, ratioToMove)
+    -- Takes a table of SimpleItemStack and inserts them in to an inventory. Updates the passed in contents object.
+    -- Returns true/false if all items were moved successfully.
+    if contents == nil or #contents == 0 then
+        return
+    end
+    local sourceOwner, itemAllMoved = nil, true
+    if dropUnmovedOnGround == nil then
+        dropUnmovedOnGround = false
+    end
+    if ratioToMove == nil then
+        ratioToMove = 1
+    end
+    for index, simpleItemStack in pairs(contents) do
+        local toMove = math.ceil(simpleItemStack.count * ratioToMove)
+        local moved = targetInventory.insert({name = simpleItemStack.name, count = toMove, health = simpleItemStack.health, durability = simpleItemStack.durablilty, ammo = simpleItemStack.ammo})
+        local remaining = simpleItemStack.count - moved
+        if moved > 0 then
+            contents[index].count = remaining
+        end
+        if remaining > 0 then
+            itemAllMoved = false
+            if dropUnmovedOnGround then
+                sourceOwner = sourceOwner or targetInventory.entity_owner or targetInventory.player_owner
+                sourceOwner.surface.spill_item_stack(sourceOwner.position, {name = simpleItemStack.name, count = remaining}, true, sourceOwner.force, false)
+            end
+        end
+    end
+    return itemAllMoved
+end
+
+Utils.GetBuilderInventory = function(builder)
+    if builder.is_player() then
+        return builder.get_main_inventory()
+    elseif builder.type ~= nil and builder.type == "construction-robot" then
+        return builder.get_inventory(defines.inventory.robot_cargo)
+    else
+        return builder
+    end
+end
+
+Utils.EmptyRotatedSprite = function()
+    return {
+        direction_count = 1,
+        filename = "__core__/graphics/empty.png",
+        width = 1,
+        height = 1
+    }
+end
+
+Utils.TrackBestFuelCount = function(trackingTable, itemName, itemCount)
+    --[[
+        The "trackingTable" argument should be an empty table created in the calling function. It should be passed in to each calling of this function to track the best fuel.
+        The function returns true when the fuel is a new best and false when its not. Returns nil if the item isn't a fuel type.
+        This function will set trackingTable to have the below entry. Query these keys in calling function:
+            trackingTable {
+                fuelName = STRING,
+                fuelCount = INT,
+                fuelValue = INT,
+            }
+    --]]
+    local itemPrototype = game.item_prototypes[itemName]
+    local fuelValue = itemPrototype.fuel_value
+    if fuelValue == nil then
+        return nil
+    end
+    if trackingTable.fuelValue == nil or fuelValue > trackingTable.fuelValue then
+        trackingTable.fuelName = itemName
+        trackingTable.fuelCount = itemCount
+        trackingTable.fuelValue = fuelValue
+        return true
+    end
+    return false
+end
+
+Utils.GetRecipeIngredientsAddedTogeather = function(recipeIngredientHandlingTables)
+    --[[
+        Is for handling a mix of recipes and ingredient list. Supports recipe ingredients, normal and expensive.
+        Returns the widest range of types fed in as a table of result tables (nil for non required returns): {ingredients, normal, expensive}
+        Takes a table (list) of entries. Each entry is a table (list) of recipe/ingredients, handling type and ratioMultiplier (optional), i.e. {{ingredients1, "add"}, {recipe1, "add", 0.5}, {ingredients2, "highest", 2}}
+        handling types:
+            - add: adds the ingredients from a list to the total
+            - subtract: removes the ingredients in this list from the total
+            - highest: just takes the highest counts of each ingredients across the 2 lists.
+        ratioMultiplier item counts for recipes are rounded up. Defaults to ration of 1 if not provided.
+    ]]
+    local ingredientsTable, ingredientTypes = {}, {}
+    for _, recipeIngredientHandlingTable in pairs(recipeIngredientHandlingTables) do
+        if recipeIngredientHandlingTable[1].normal ~= nil then
+            ingredientTypes.normal = true
+        end
+        if recipeIngredientHandlingTable[1].expensive ~= nil then
+            ingredientTypes.expensive = true
+        end
+    end
+    if Utils.IsTableEmpty(ingredientTypes) then
+        ingredientTypes.ingredients = true
+    end
+
+    for ingredientType in pairs(ingredientTypes) do
+        local ingredientsList = {}
+        for _, recipeIngredientHandlingTable in pairs(recipeIngredientHandlingTables) do
+            local ingredients  --try to find the correct ingredients for our desired type, if not found just try all of them to find one to use. Assume its a simple ingredient list last.
+            if recipeIngredientHandlingTable[1][ingredientType] ~= nil then
+                ingredients = recipeIngredientHandlingTable[1][ingredientType].ingredients or recipeIngredientHandlingTable[1][ingredientType]
+            elseif recipeIngredientHandlingTable[1]["ingredients"] ~= nil then
+                ingredients = recipeIngredientHandlingTable[1]["ingredients"]
+            elseif recipeIngredientHandlingTable[1]["normal"] ~= nil then
+                ingredients = recipeIngredientHandlingTable[1]["normal"].ingredients
+            elseif recipeIngredientHandlingTable[1]["expensive"] ~= nil then
+                ingredients = recipeIngredientHandlingTable[1]["expensive"].ingredients
+            else
+                ingredients = recipeIngredientHandlingTable[1]
+            end
+            local handling, ratioMultiplier = recipeIngredientHandlingTable[2], recipeIngredientHandlingTable[3]
+            if ratioMultiplier == nil then
+                ratioMultiplier = 1
+            end
+            for _, details in pairs(ingredients) do
+                local name, count = details[1] or details.name, math.ceil((details[2] or details.amount) * ratioMultiplier)
+                if handling == "add" then
+                    ingredientsList[name] = (ingredientsList[name] or 0) + count
+                elseif handling == "subtract" then
+                    if ingredientsList[name] ~= nil then
+                        ingredientsList[name] = ingredientsList[name] - count
+                    end
+                elseif handling == "highest" then
+                    if count > (ingredientsList[name] or 0) then
+                        ingredientsList[name] = count
+                    end
+                end
+            end
+        end
+        ingredientsTable[ingredientType] = {}
+        for name, count in pairs(ingredientsList) do
+            if ingredientsList[name] > 0 then
+                table.insert(ingredientsTable[ingredientType], {name, count})
+            end
+        end
+    end
+    return ingredientsTable
+end
+
+Utils.GetRecipeAttribute = function(recipe, attributeName, recipeCostType)
+    -- recipeType defaults to the no cost type if not supplied. Values are: "none", "normal" and "expensive".
+    recipeCostType = recipeCostType or "none"
+    if recipeCostType == "none" and recipe[attributeName] ~= nil then
+        return recipe[attributeName]
+    elseif recipe[recipeCostType] ~= nil and recipe[recipeCostType][attributeName] ~= nil then
+        return recipe[recipeCostType][attributeName]
+    end
+
+    if recipe[attributeName] ~= nil then
+        return recipe[attributeName]
+    elseif recipe["normal"] ~= nil and recipe["normal"][attributeName] ~= nil then
+        return recipe["normal"][attributeName]
+    elseif recipe["expensive"] ~= nil and recipe["expensive"][attributeName] ~= nil then
+        return recipe["expensive"][attributeName]
+    end
+
+    return nil
 end
 
 return Utils
