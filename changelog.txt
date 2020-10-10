@@ -3,11 +3,13 @@ Version: 19.0.11
 Date: 2020-xxxxxxx
   Features:
   Changes:
+    - Mod now reacts to all units that breath air dieing, rather than just units on the "enemy" force.
   Bugfixes:
     - Support the new nuclear-ground tile type. Treated the same as landfil, like the dryest sand.
   Info:
     - Removed the biter_reincarnation remote interface as the functionality is included in my main utility library. No current other mod versions utilised the interface.
     - Moved to using the tree generation code from my main utility library.
+    - Updated all mod settings to be a standardised format and include the mod name in them.
 ---------------------------------------------------------------------------------------------------
 Version: 18.0.10
 Date: 2020-01-26

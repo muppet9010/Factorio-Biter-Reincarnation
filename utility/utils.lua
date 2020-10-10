@@ -494,7 +494,8 @@ function Utils.WasCreativeModeInstantDeconstructionUsed(event)
 end
 
 function Utils.NormaliseChanceList(dataSet, chancePropertyName, skipFillingEmptyChance)
-    --By default the dataSet's total chance is manipulated in to a 0-1 range. But if optional skipFillingEmptyChance is set to true then total chance below 1 will not be scaled up, so that nil results can be had in random selection.
+    -- The dataset is a table of entries. Each entry has various keys that are used in the calling scope and ignored by this funciton. It also has a key of the name passed in as the chancePropertyName parameter that defines the chance of this result.
+    -- By default the dataSet's total chance (key with name chancePropertyName) is manipulated in to a 0-1 range. But if optional skipFillingEmptyChance is set to true then total chance below 1 will not be scaled up, so that nil results can be had in random selection.
     local totalChance = 0
     for _, v in pairs(dataSet) do
         totalChance = totalChance + v[chancePropertyName]
@@ -798,7 +799,7 @@ function Utils.IsPositionWithinCircled(circleCenter, radius, position)
 end
 
 Utils.GetValueAndUnitFromString = function(text)
-    return string.match(text, "%d+"), string.match(text, "%a+")
+    return string.match(text, "%d+%.?%d*"), string.match(text, "%a+")
 end
 
 Utils.TryMoveInventoriesLuaItemStacks = function(sourceInventory, targetInventory, dropUnmovedOnGround, ratioToMove)
