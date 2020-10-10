@@ -8,8 +8,8 @@ local Reincarnation = {}
 local maxQueueCyclesPerSecond = 60
 
 Reincarnation.OnLoad = function()
-    Events.RegisterHandler(defines.events.on_runtime_mod_setting_changed, "Reincarnation", Reincarnation.UpdateSetting)
-    Events.RegisterHandler(defines.events.on_entity_died, "Reincarnation", Reincarnation.OnEntityDiedUnit, "TypeIsUnit")
+    Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
+    Events.RegisterHandlerEvent(defines.events.on_entity_died, "Reincarnation.OnEntityDiedUnit", Reincarnation.OnEntityDiedUnit, "TypeIsUnit", {{filter = "type", type = "unit"}})
     EventScheduler.RegisterScheduledEventType("Reincarnation.ProcessReincarnationQueue", Reincarnation.ProcessReincarnationQueue)
 end
 

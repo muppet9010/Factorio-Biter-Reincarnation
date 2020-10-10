@@ -4,11 +4,9 @@ When a Biter or Spitter (unit on the "enemy" force) dies it tries to reincarnate
 
 The tree type (living and dead) will be biome appropriate for where the biter dies. Only base game tiles are supported, but modded trees should behave correctly. When the death is on a player placed ground type (floor) the underlying tile type is used.
 
-The chance of a tree or burning tree appearing on enemy unit death is fully configurable. Combined chance of events occuring can be greater than 100%. The ratio of values will be utilised. Below 100% chance means possibility of no event happening.
+The chance of a tree or burning tree appearing on enemy unit death is fully configurable. If the combined chance of events occuring is greater than 100% the ratio of values will be utilised. If below 100% chance then there is the possibility of no event happening.
 
-There are mod settings to control the reincarnation queue. So you can limit the speed of reincarnation to avoid massive UPS drops.
-
-A script interface is included to allow other mods to utilise the logic. See the end of control.lua for the remote interface registration.
+When biters die they join a reincarnation queue. The processing speed of the queue is controlable by mod settings so you can limitthe impact of UPS drops.
 
 Doesn't support modded tiles or mods that do their own map creation and so new landscape mods aren't supported.
 Only reacts to units on the "enemy" force to avoid unintentional reactions to other mods. If there are mods that it should react to please request them.
