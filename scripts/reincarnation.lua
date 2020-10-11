@@ -37,7 +37,7 @@ Reincarnation.CreateGlobals = function()
     --global.rawLandfillOnDeathChance = global.rawLandfillOnDeathChance or 0
     global.reincarnationQueue = global.reincarnationQueue or {}
     global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0
-    global.reincarnationQueueToDoPerSecond = global.reincarnationQueueToDoPerSecond or 0
+    global.reincarnationQueueProcessedPerSecond = global.reincarnationQueueProcessedPerSecond or 0
     global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond or 0
     global.reincarnationQueueCyclesPerSecond = global.reincarnationQueueCyclesPerSecond or 0
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond or 0
@@ -85,7 +85,7 @@ Reincarnation.UpdateSetting = function(event)
     if settingName == "biter_reincarnation-max_reincarnations_per_second" or settingName == nil then
         local perSecond = settings.global["biter_reincarnation-max_reincarnations_per_second"].value
         local cyclesPerSecond = math.min(perSecond, maxQueueCyclesPerSecond)
-        global.reincarnationQueueToDoPerSecond = perSecond
+        global.reincarnationQueueProcessedPerSecond = perSecond
         global.reincarnationQueueCyclesPerSecond = cyclesPerSecond
         global.reincarnationQueueProcessDelay = math.floor(60 / cyclesPerSecond)
     end
@@ -114,9 +114,9 @@ Reincarnation.ProcessReincarnationQueue = function()
         global.reincarnationQueueDoneThisSecond = 0
         global.reincarnationQueueCyclesDoneThisSecond = 0
     end
-    local toDoThisCycle = math.floor((global.reincarnationQueueToDoPerSecond - global.reincarnationQueueDoneThisSecond) / (global.reincarnationQueueCyclesPerSecond - global.reincarnationQueueCyclesDoneThisSecond))
-    Logging.Log("toDoThisCycle: " .. toDoThisCycle .. " reached via...", debug)
-    Logging.Log("math.floor((" .. global.reincarnationQueueToDoPerSecond .. " - " .. global.reincarnationQueueDoneThisSecond .. ") / (" .. global.reincarnationQueueCyclesPerSecond .. " - " .. global.reincarnationQueueCyclesDoneThisSecond .. "))", debug)
+    local tasksThisCycle = math.floor((global.reincarnationQueueProcessedPerSecond - global.reincarnationQueueDoneThisSecond) / (global.reincarnationQueueCyclesPerSecond - global.reincarnationQueueCyclesDoneThisSecond))
+    Logging.Log("tasksThisCycle: " .. tasksThisCycle .. " reached via...", debug)
+    Logging.Log("math.floor((" .. global.reincarnationQueueProcessedPerSecond .. " - " .. global.reincarnationQueueDoneThisSecond .. ") / (" .. global.reincarnationQueueCyclesPerSecond .. " - " .. global.reincarnationQueueCyclesDoneThisSecond .. "))", debug)
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
     for k, details in pairs(global.reincarnationQueue) do
         table.remove(global.reincarnationQueue, k)
@@ -141,7 +141,7 @@ Reincarnation.ProcessReincarnationQueue = function()
             global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
             Logging.Log("1 reincarnation done", debug)
         end
-        if doneThisCycle >= toDoThisCycle then
+        if doneThisCycle >= tasksThisCycle then
             return
         end
     end
