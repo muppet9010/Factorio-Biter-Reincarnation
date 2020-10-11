@@ -2,12 +2,11 @@
     Can get random biter types and worm type for specified evolution level.
 ]]
 local Utils = require("utility/utils")
---local Logging = require("utility/logging")
 
 local BiterSelection = {}
 
 function BiterSelection.GetBiterType(probabilityGlobalName, spawnerType, evolution)
-    --probabilityGlobalName is a name for tracking this biter evolution probability line. Use unique names if different evolutions are being tracked.
+    -- probabilityGlobalName option is a name for tracking this biter evolution probability line. Use unique names if different evolutions are being tracked.
     global.UTILITYBITERSELECTION = global.UTILITYBITERSELECTION or {}
     global.UTILITYBITERSELECTION[probabilityGlobalName] = global.UTILITYBITERSELECTION[probabilityGlobalName] or {}
     local modEnemyProbabilities = global.UTILITYBITERSELECTION[probabilityGlobalName]
@@ -58,7 +57,7 @@ function BiterSelection._CalculateSpecificBiterSelectionProbabilities(spawnerTyp
 end
 
 function BiterSelection.GetWormType(wormEvoGlobalName, evolution)
-    --wormEvoGlobalName is a name for tracking this worm evolution line. Use unique names if different evolutions are being tracked.
+    -- wormEvoGlobalName parameter is a name for tracking this worm evolution line. Use unique names if different evolutions are being tracked.
     global.UTILITYBITERSELECTION = global.UTILITYBITERSELECTION or {}
     global.UTILITYBITERSELECTION[wormEvoGlobalName] = global.UTILITYBITERSELECTION[wormEvoGlobalName] or {}
     local wormEvoType = global.UTILITYBITERSELECTION[wormEvoGlobalName]

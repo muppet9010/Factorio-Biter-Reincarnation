@@ -1,11 +1,10 @@
 local Utils = {}
---local Logging = require("utility/logging")
 local factorioUtil = require("__core__/lualib/util")
 Utils.DeepCopy = factorioUtil.table.deepcopy
-Utils.TableMerge = factorioUtil.merge -- takes an array of tables and returns a new table with copies of their contents
+Utils.TableMerge = factorioUtil.merge -- Takes an array of tables and returns a new table with copies of their contents
 
 function Utils.Are2EntitiesTheSame(entity1, entity2)
-    --Uses unit number if both support it, otherwise has to compare a lot of attributes to try and work out if they are the same base entity.
+    -- Uses unit number if both support it, otherwise has to compare a lot of attributes to try and work out if they are the same base entity.
     if not entity1.valid or not entity2.valid then
         return false
     end
@@ -25,7 +24,7 @@ function Utils.Are2EntitiesTheSame(entity1, entity2)
 end
 
 function Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, onlyDestructable, onlyKillable, entitiesExcluded)
-    --Expand force affected to support range of opt in or opt out forces.
+    -- Expand force affected to support range of opt in or opt out forces.
     local entitiesFound, filteredEntitiesFound = surface.find_entities(positionedBoundingBox), {}
     for k, entity in pairs(entitiesFound) do
         if entity.valid then
@@ -287,7 +286,7 @@ function Utils.HandleFloatNumberAsChancedValue(value)
 end
 
 function Utils.FuzzyCompareDoubles(num1, logic, num2)
-    --This doesn't guarentee correct on some of the edge cases, but is as close as possible assuming that 1/256 is the variance for the same number (Bilka, Dev on Discord)
+    -- This doesn't guarentee correct on some of the edge cases, but is as close as possible assuming that 1/256 is the variance for the same number (Bilka, Dev on Discord)
     local numDif = num1 - num2
     local variance = 1 / 256
     if logic == "=" then
@@ -395,7 +394,7 @@ function Utils.GetDistance(pos1, pos2)
 end
 
 function Utils.IsPositionInBoundingBox(position, boundingBox, safeTiling)
-    --safeTiling means that the boundingbox can be tiled without risk of an entity on the border being in 2 result sets, i.e. for use on each chunk.
+    -- safeTiling option means that the boundingbox can be tiled without risk of an entity on the border being in 2 result sets, i.e. for use on each chunk.
     if safeTiling == nil or not safeTiling then
         if position.x >= boundingBox.left_top.x and position.x <= boundingBox.right_bottom.x and position.y >= boundingBox.left_top.y and position.y <= boundingBox.right_bottom.y then
             return true
@@ -428,7 +427,7 @@ function Utils.TableKeyToArray(aTable)
 end
 
 function Utils.TableContentsToJSON(targetTable, name, singleLineOutput)
-    --targetTable is the only mandatory parameter. name if provided will appear as a "name:JSONData" output. singleLineOutput removes all lines and spacing from the output.
+    -- targetTable is the only mandatory parameter. name if provided will appear as a "name:JSONData" output. singleLineOutput removes all lines and spacing from the output.
     singleLineOutput = singleLineOutput or false
     local tablesLogged = {}
     return Utils._TableContentsToJSON(targetTable, name, singleLineOutput, tablesLogged)
@@ -572,7 +571,7 @@ function Utils.GetRandomEntryFromNormalisedDataSet(dataSet, chancePropertyName)
 end
 
 function Utils.DisableSiloScript()
-    --OnLoad
+    -- OnLoad
     if remote.interfaces["silo_script"] == nil then
         return
     end
@@ -583,7 +582,7 @@ function Utils.DisableSiloScript()
 end
 
 function Utils.DisableWinOnRocket()
-    --OnInit
+    -- OnInit
     if remote.interfaces["silo_script"] == nil then
         return
     end
@@ -591,7 +590,7 @@ function Utils.DisableWinOnRocket()
 end
 
 function Utils.ClearSpawnRespawnItems()
-    --OnInit
+    -- OnInit
     if remote.interfaces["freeplay"] == nil then
         return
     end
@@ -600,7 +599,7 @@ function Utils.ClearSpawnRespawnItems()
 end
 
 function Utils.SetStartingMapReveal(distance)
-    --OnInit
+    -- OnInit
     if remote.interfaces["freeplay"] == nil then
         return
     end
@@ -608,7 +607,7 @@ function Utils.SetStartingMapReveal(distance)
 end
 
 function Utils.DisableIntroMessage()
-    --OnInit
+    -- OnInit
     if remote.interfaces["freeplay"] == nil then
         return
     end
@@ -703,7 +702,7 @@ function Utils.DisplayTimeOfTicks(inputTicks, displayLargestTimeUnit, displaySma
 end
 
 function Utils._CreatePlacementTestEntityPrototype(entityToClone, newEntityName, subgroup, collisionMask)
-    --TODO: doesn't handle mipmaps at all presently. Also ignores any of the extra data in an icons table of "Types/IconData". Think this should just duplicate the target icons table entry.
+    -- TODO: doesn't handle mipmaps at all presently. Also ignores any of the extra data in an icons table of "Types/IconData". Think this should just duplicate the target icons table entry.
     local clonedIcon = entityToClone.icon
     local clonedIconSize = entityToClone.icon_size
     if clonedIcon == nil then

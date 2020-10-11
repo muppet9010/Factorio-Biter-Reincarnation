@@ -19,7 +19,7 @@ end
 
 Reincarnation.OnStartup = function()
     Reincarnation.UpdateSetting(nil)
-    --Do at an offset from 0 to try and avoid bunching on other scheduled things ticks
+    -- Do at an offset from 0 to try and avoid bunching on other scheduled things ticks
     if not EventScheduler.IsEventScheduled("Reincarnation.ProcessReincarnationQueue", nil, nil) then
         EventScheduler.ScheduleEvent(6 + game.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
     end
@@ -32,9 +32,6 @@ Reincarnation.CreateGlobals = function()
     global.rawBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance or 0
     global.rawRockOnDeathChance = global.rawRockOnDeathChance or 0
     global.rawCliffOnDeathChance = global.rawCliffOnDeathChance or 0
-    --global.rawExplosionOnDeathChance = global.rawExplosionOnDeathChance or 0
-    --global.rawWaterOnDeathChance = global.rawWaterOnDeathChance or 0
-    --global.rawLandfillOnDeathChance = global.rawLandfillOnDeathChance or 0
     global.reincarnationQueue = global.reincarnationQueue or {}
     global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0
     global.reincarnationQueueProcessedPerSecond = global.reincarnationQueueProcessedPerSecond or 0
@@ -65,18 +62,6 @@ Reincarnation.UpdateSetting = function(event)
     if settingName == "biter_reincarnation-turn_to_cliff_chance_percent" or settingName == nil then
         global.rawCliffOnDeathChance = tonumber(settings.global["biter_reincarnation-turn_to_cliff_chance_percent"].value) / 100
     end
-
-    --if settingName == "turn-to-explosion-chance-percent" or settingName == nil then
-    --    global.rawExplosionOnDeathChance = tonumber(settings.global["turn-to-explosion-chance-percent"].value) / 100
-    --end
-
-    --if settingName == "turn-to-water-chance-percent" or settingName == nil then
-    --    global.rawWaterOnDeathChance = tonumber(settings.global["turn-to-water-chance-percent"].value) / 100
-    --end
-
-    --if settingName == "turn-to-landfill-chance-percent" or settingName == nil then
-    --    global.rawLandfillOnDeathChance = tonumber(settings.global["turn-to-landfill-chance-percent"].value) / 100
-    --end
 
     if settingName == "biter_reincarnation-large_reincarnations_push" or settingName == nil then
         global.largeReincarnationsPush = settings.global["biter_reincarnation-large_reincarnations_push"].value
@@ -167,7 +152,7 @@ Reincarnation.OnEntityDiedUnit = function(event)
 end
 
 Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
-    --make 2 lots of fire to ensure the tree catches fire
+    -- Make 2 lots of fire to ensure the tree catches fire
     surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
     surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
 end
@@ -224,22 +209,22 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
 
     local cliffPositionLeft, cliffPositionRight, generalFacing, cliffTypeLeft, cliffTypeRight
     if orientation >= 0.875 or orientation < 0.125 then
-        --biter heading northish
+        -- Biter heading northish
         generalFacing = "north-south"
         cliffTypeLeft = "none-to-west"
         cliffTypeRight = "east-to-none"
     elseif orientation >= 0.125 and orientation < 0.375 then
-        --biter heading eastish
+        -- Biter heading eastish
         generalFacing = "east-west"
         cliffTypeLeft = "none-to-north"
         cliffTypeRight = "none-to-west"
     elseif orientation >= 0.375 and orientation < 0.625 then
-        --biter heading southish
+        -- Biter heading southish
         generalFacing = "north-south"
         cliffTypeLeft = "west-to-none"
         cliffTypeRight = "none-to-east"
     elseif orientation >= 0.625 and orientation < 0.875 then
-        --biter heading westish
+        -- Biter heading westish
         generalFacing = "east-west"
         cliffTypeLeft = "north-to-none"
         cliffTypeRight = "east-to-none"
