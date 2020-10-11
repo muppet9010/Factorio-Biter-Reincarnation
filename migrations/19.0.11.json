@@ -1,0 +1,24 @@
+{
+    "mod-setting": [
+        [
+            "tree-fire-max-hope-count",
+            "biter_reincarnation-tree_fire_max_hop_count"
+        ],
+        [
+            "turn-to-tree-chance-percent",
+            "biter_reincarnation-turn_to_tree_chance_percent"
+        ],
+        [
+            "burst-into-flames-chance-percent",
+            "biter_reincarnation-turn_to_burning_tree_chance_percent"
+        ],
+        [
+            "max_reincarnations_per_second",
+            "biter_reincarnation-max_reincarnations_per_second"
+        ],
+        [
+            "max_seconds_wait_for_reincarnation",
+            "biter_reincarnation-max_seconds_wait_for_reincarnation"
+        ]
+    ]
+}

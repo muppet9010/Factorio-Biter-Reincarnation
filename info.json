@@ -1,13 +1,13 @@
 {
     "name": "biter_reincarnation",
-    "version": "18.0.10",
+    "version": "19.0.11",
     "title": "Biter Reincarnation",
     "author": "Muppet9010",
     "contact": "",
     "homepage": "",
-    "factorio_version": "0.18",
+    "factorio_version": "1.0",
     "dependencies": [
-        "base >= 0.18",
+        "base >= 1.0.0",
         "!alien-biomes"
     ],
     "description": "On death Biters reincarnate as the true perpetual enemy, trees"

@@ -1,7 +1,7 @@
 data:extend(
     {
         {
-            name = "tree-fire-max-hope-count",
+            name = "biter_reincarnation-tree_fire_max_hop_count",
             type = "int-setting",
             default_value = -1,
             minimum_value = -1,
@@ -15,16 +15,16 @@ data:extend(
 data:extend(
     {
         {
-            name = "turn-to-tree-chance-percent",
+            name = "biter_reincarnation-turn_to_tree_chance_percent",
             type = "int-setting",
-            default_value = 100,
+            default_value = 90,
             minomum_value = 0,
             maximum_value = 100,
             setting_type = "runtime-global",
             order = "1001"
         },
         {
-            name = "burst-into-flames-chance-percent",
+            name = "biter_reincarnation-turn_to_burning_tree_chance_percent",
             type = "int-setting",
             default_value = 1,
             minimum_value = 0,
@@ -33,20 +33,45 @@ data:extend(
             order = "1002"
         },
         {
-            name = "max_reincarnations_per_second",
+            name = "biter_reincarnation-turn_to_rock_chance_percent",
             type = "int-setting",
-            default_value = 10,
-            minimum_value = 1,
+            default_value = 8,
+            minimum_value = 0,
+            maximum_value = 100,
+            setting_type = "runtime-global",
+            order = "1003"
+        },
+        {
+            name = "biter_reincarnation-turn_to_cliff_chance_percent",
+            type = "int-setting",
+            default_value = 1,
+            minimum_value = 0,
+            maximum_value = 100,
             setting_type = "runtime-global",
             order = "1004"
         },
         {
-            name = "max_seconds_wait_for_reincarnation",
+            name = "biter_reincarnation-large_reincarnations_push",
+            type = "bool-setting",
+            default_value = true,
+            setting_type = "runtime-global",
+            order = "1101"
+        },
+        {
+            name = "biter_reincarnation-max_reincarnations_per_second",
+            type = "int-setting",
+            default_value = 10,
+            minimum_value = 1,
+            setting_type = "runtime-global",
+            order = "1201"
+        },
+        {
+            name = "biter_reincarnation-max_seconds_wait_for_reincarnation",
             type = "int-setting",
             default_value = 5,
             minimum_value = 1,
             setting_type = "runtime-global",
-            order = "1005"
+            order = "1202"
         }
     }
 )
