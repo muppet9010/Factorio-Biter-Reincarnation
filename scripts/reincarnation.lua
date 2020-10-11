@@ -169,32 +169,30 @@ end
 Reincarnation.AddRockNearPosition = function(surface, targetPosition)
     local debug = true
     local rockType = Utils.GetRandomEntryFromNormalisedDataSet(SharedData.RockTypes, "chance")
-    Logging.Log("Rock type: " .. rockType.name, debug)
 
-    local newPosition = surface.find_non_colliding_position(rockType.name, targetPosition, 3, 0.2)
-    local displace = false
+    local newPosition = surface.find_non_colliding_position(rockType.name, targetPosition, 2, 0.2)
+    local displaceRequired = false
     if newPosition == nil then
-    --newPosition = surface.find_non_colliding_position(rockType.placementName, targetPosition, 3, 0.2)
-    --displace = true
+        newPosition = surface.find_non_colliding_position(rockType.placementName, targetPosition, 2, 0.2)
+        displaceRequired = true
     end
     if newPosition == nil then
         Logging.LogPrint("No position for new rock found", debug)
         return nil
     end
 
-    --if displace then
-    local rockPrototype = game.entity_prototypes[rockType.name]
-    local positionedBoundingBox = Utils.ApplyBoundingBoxToPosition(targetPosition, rockPrototype.collision_box)
-    if global.largeReincarnationsPush then
-        --move stuff
-        for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, true, nil, true, true)) do
-            TODO
+    if displaceRequired then
+        local rockPrototype = game.entity_prototypes[rockType.name]
+        local positionedBoundingBox = Utils.ApplyBoundingBoxToPosition(newPosition, rockPrototype.collision_box)
+        if global.largeReincarnationsPush then
+            --move stuff
+            for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, true, nil, true, true)) do
+                --TODO - needs writing
+            end
+        else
+            Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, nil, false, nil)
         end
-    else
-        local shrunkPositionedBoundingBox = Utils.GrowBoundingBox(positionedBoundingBox, -0.2, -0.2) -- shrink the bounding box so it doesn't destroy things right on the edge, as this would be a valid placement position found.
-        Utils.KillAllKillableObjectsInArea(surface, shrunkPositionedBoundingBox, nil, false, nil)
     end
-    --end
 
     local newRock = surface.create_entity {name = rockType.name, position = newPosition, force = "neutral"}
     if newRock == nil then
