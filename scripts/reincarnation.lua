@@ -121,7 +121,7 @@ Reincarnation.ProcessReincarnationQueue = function()
     for k, details in pairs(global.reincarnationQueue) do
         table.remove(global.reincarnationQueue, k)
         if details.loggedTick + global.maxTicksWaitForReincarnation >= game.tick then
-            local surface, targetPosition, type = details.surface, details.position, details.type
+            local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
             if type == reincarnationType.tree then
                 BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
             elseif type == reincarnationType.burningTree then
@@ -131,11 +131,11 @@ Reincarnation.ProcessReincarnationQueue = function()
                 end
                 Reincarnation.AddTreeFireToPosition(surface, targetPosition)
             elseif type == reincarnationType.rock then
-                Reincarnation.AddRockNearPosition(surface, targetPosition)
+                Reincarnation.AddRockNearPosition(surface, targetPosition, type)
             elseif type == reincarnationType.cliff then
-                --TODO
+                Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
             else
-                game.print("TODO: " .. tostring(type))
+                error("unsupported type: " .. type)
             end
             doneThisCycle = doneThisCycle + 1
             global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
@@ -156,10 +156,14 @@ Reincarnation.OnEntityDiedUnit = function(event)
         return
     end
 
-    local surface = entity.surface
-    local targetPosition = entity.position
-    local type = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarantionChanceList, "chance")
-    table.insert(global.reincarnationQueue, {loggedTick = event.tick, surface = surface, position = targetPosition, type = type.name})
+    local details = {
+        loggedTick = event.tick,
+        surface = entity.surface,
+        position = entity.position,
+        type = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarantionChanceList, "chance").name,
+        orientation = entity.orientation
+    }
+    table.insert(global.reincarnationQueue, details)
 end
 
 Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
@@ -168,14 +172,14 @@ Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
     surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
 end
 
-Reincarnation.AddRockNearPosition = function(surface, targetPosition)
+Reincarnation.AddRockNearPosition = function(surface, targetPosition, type)
     local debug = true
-    local rockType = Utils.GetRandomEntryFromNormalisedDataSet(SharedData.RockTypes, "chance")
+    local typeData = Utils.GetRandomEntryFromNormalisedDataSet(SharedData.RockTypes, "chance")
 
-    local newPosition = surface.find_non_colliding_position(rockType.name, targetPosition, 2, 0.2)
+    local newPosition = surface.find_non_colliding_position(typeData.name, targetPosition, 2, 0.2)
     local displaceRequired = false
     if newPosition == nil then
-        newPosition = surface.find_non_colliding_position(rockType.placementName, targetPosition, 2, 0.2)
+        newPosition = surface.find_non_colliding_position(typeData.placementName, targetPosition, 2, 0.2)
         displaceRequired = true
     end
     if newPosition == nil then
@@ -183,14 +187,14 @@ Reincarnation.AddRockNearPosition = function(surface, targetPosition)
         return nil
     end
 
-    local newRock = surface.create_entity {name = rockType.name, position = newPosition, force = "neutral", raise_built = true}
-    if newRock == nil then
+    local rockEntity = surface.create_entity {name = typeData.name, position = newPosition, force = "neutral", raise_built = true}
+    if rockEntity == nil then
         Logging.LogPrint("Failed to create rock at found position")
         return nil
     end
 
     if displaceRequired then
-        for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, newRock.bounding_box, true, nil, true, true, {newRock})) do
+        for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, rockEntity.bounding_box, true, nil, true, true, {rockEntity})) do
             local entityMoved = false
             if global.largeReincarnationsPush then
                 if movableEntityTypes[entity.type] ~= nil then
@@ -201,10 +205,67 @@ Reincarnation.AddRockNearPosition = function(surface, targetPosition)
                     end
                 end
                 if not entityMoved then
-                    entity.die("neutral", newRock)
+                    entity.die("neutral", rockEntity)
                 end
             end
         end
+    end
+end
+
+Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientation)
+    local debug = true
+
+    local cliffPositionCenter = {
+        x = (math.floor(targetPosition.x / 4) * 4) + 2,
+        y = (math.floor(targetPosition.y / 4) * 4) + 2.5
+    }
+    local cliffPositionLeft, cliffPositionRight
+
+    local cliff_orientation
+    if orientation >= 0.875 and orientation < 0.125 then
+        --biter heading northish
+        cliff_orientation = "east-to-west"
+        if cliffPositionCenter.x - targetPosition.x < 0 then
+            cliffPositionRight = cliffPositionCenter
+            cliffPositionLeft = {x = cliffPositionCenter.x + 4, y = cliffPositionCenter.y}
+        else
+            cliffPositionLeft = cliffPositionCenter
+            cliffPositionRight = {x = cliffPositionCenter.x - 4, y = cliffPositionCenter.y}
+        end
+        if cliffPositionCenter.y - targetPosition.y < -2 then
+            cliffPositionRight.y = cliffPositionRight.y + 4
+            cliffPositionLeft.y = cliffPositionLeft.y + 4
+        end
+    elseif orientation >= 0.125 and orientation < 0.375 then
+        --biter heading eastish
+        cliff_orientation = "south-to-north"
+    elseif orientation >= 0.375 and orientation < 0.625 then
+        --biter heading southish
+        cliff_orientation = "west-to-east"
+        if cliffPositionCenter.x - targetPosition.x < 0 then
+            cliffPositionRight = cliffPositionCenter
+            cliffPositionLeft = {x = cliffPositionCenter.x + 4, y = cliffPositionCenter.y}
+        else
+            cliffPositionLeft = cliffPositionCenter
+            cliffPositionRight = {x = cliffPositionCenter.x - 4, y = cliffPositionCenter.y}
+        end
+        if cliffPositionCenter.y - targetPosition.y < -2 then
+            cliffPositionRight.y = cliffPositionRight.y + 4
+            cliffPositionLeft.y = cliffPositionLeft.y + 4
+        end
+    elseif orientation >= 0.625 and orientation < 0.875 then
+        --biter heading westish
+        cliff_orientation = "north-to-south"
+    end
+
+    local cliffEntityLeft = surface.create_entity {name = "cliff", position = cliffPositionLeft, force = "neutral", cliff_orientation = cliff_orientation, raise_built = true}
+    local cliffEntityRight = surface.create_entity {name = "cliff", position = cliffPositionRight, force = "neutral", cliff_orientation = cliff_orientation, raise_built = true}
+
+    if cliffEntityLeft ~= nil and cliffEntityLeft.valid then
+        cliffEntityLeft.update_connections()
+    end
+    if cliffEntityRight ~= nil and cliffEntityRight.valid then
+        cliffEntityRight.update_connections()
     end
 end
 
