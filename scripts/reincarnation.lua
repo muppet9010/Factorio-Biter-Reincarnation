@@ -8,7 +8,7 @@ local Reincarnation = {}
 
 local maxQueueCyclesPerSecond = 60
 local reincarnationType = {tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff"}
-local unitsIgnored = {character = "character"} --TODO: add klonons mods to this as it adds units
+local unitsIgnored = {character = "character", compilatron = "compilatron"}
 local movableEntityTypes = {unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle"}
 
 Reincarnation.OnLoad = function()
