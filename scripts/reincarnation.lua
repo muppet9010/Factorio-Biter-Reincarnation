@@ -131,7 +131,7 @@ Reincarnation.ProcessReincarnationQueue = function()
                 end
                 Reincarnation.AddTreeFireToPosition(surface, targetPosition)
             elseif type == reincarnationType.rock then
-                Reincarnation.AddRockNearPosition(surface, targetPosition, type)
+                Reincarnation.AddRockNearPosition(surface, targetPosition)
             elseif type == reincarnationType.cliff then
                 Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
             else
@@ -172,7 +172,7 @@ Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
     surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
 end
 
-Reincarnation.AddRockNearPosition = function(surface, targetPosition, type)
+Reincarnation.AddRockNearPosition = function(surface, targetPosition)
     local debug = true
     local typeData = Utils.GetRandomEntryFromNormalisedDataSet(SharedData.RockTypes, "chance")
 
@@ -194,54 +194,57 @@ Reincarnation.AddRockNearPosition = function(surface, targetPosition, type)
     end
 
     if displaceRequired then
-        for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, rockEntity.bounding_box, true, nil, true, true, {rockEntity})) do
-            local entityMoved = false
-            if global.largeReincarnationsPush then
-                if movableEntityTypes[entity.type] ~= nil then
-                    local entityNewPosition = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.1)
-                    if entityNewPosition ~= nil then
-                        entity.teleport(entityNewPosition)
-                        entityMoved = true
-                    end
+        Reincarnation.DisplaceEntitiesInBoundingBox(surface, rockEntity)
+    end
+end
+
+Reincarnation.DisplaceEntitiesInBoundingBox = function(surface, createdEntity)
+    for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, createdEntity.bounding_box, true, nil, true, true, {createdEntity})) do
+        local entityMoved = false
+        if global.largeReincarnationsPush then
+            if movableEntityTypes[entity.type] ~= nil then
+                local entityNewPosition = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.1)
+                if entityNewPosition ~= nil then
+                    entity.teleport(entityNewPosition)
+                    entityMoved = true
                 end
-                if not entityMoved then
-                    entity.die("neutral", rockEntity)
-                end
+            end
+            if not entityMoved then
+                entity.die("neutral", createdEntity)
             end
         end
     end
 end
 
 Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientation)
-    local debug = true
-
     local cliffPositionCenter = {
         x = (math.floor(targetPosition.x / 4) * 4) + 2,
         y = (math.floor(targetPosition.y / 4) * 4) + 2.5
     }
-    local cliffPositionLeft, cliffPositionRight
 
-    local cliff_orientation
-    if orientation >= 0.875 and orientation < 0.125 then
+    local cliffPositionLeft, cliffPositionRight, generalFacing, cliffTypeLeft, cliffTypeRight
+    if orientation >= 0.875 or orientation < 0.125 then
         --biter heading northish
-        cliff_orientation = "east-to-west"
-        if cliffPositionCenter.x - targetPosition.x < 0 then
-            cliffPositionRight = cliffPositionCenter
-            cliffPositionLeft = {x = cliffPositionCenter.x + 4, y = cliffPositionCenter.y}
-        else
-            cliffPositionLeft = cliffPositionCenter
-            cliffPositionRight = {x = cliffPositionCenter.x - 4, y = cliffPositionCenter.y}
-        end
-        if cliffPositionCenter.y - targetPosition.y < -2 then
-            cliffPositionRight.y = cliffPositionRight.y + 4
-            cliffPositionLeft.y = cliffPositionLeft.y + 4
-        end
+        generalFacing = "north-south"
+        cliffTypeLeft = "none-to-west"
+        cliffTypeRight = "east-to-none"
     elseif orientation >= 0.125 and orientation < 0.375 then
         --biter heading eastish
-        cliff_orientation = "south-to-north"
+        generalFacing = "east-west"
+        cliffTypeLeft = "none-to-north"
+        cliffTypeRight = "none-to-west"
     elseif orientation >= 0.375 and orientation < 0.625 then
         --biter heading southish
-        cliff_orientation = "west-to-east"
+        generalFacing = "north-south"
+        cliffTypeLeft = "west-to-none"
+        cliffTypeRight = "none-to-east"
+    elseif orientation >= 0.625 and orientation < 0.875 then
+        --biter heading westish
+        generalFacing = "east-west"
+        cliffTypeLeft = "north-to-none"
+        cliffTypeRight = "east-to-none"
+    end
+    if generalFacing == "north-south" then
         if cliffPositionCenter.x - targetPosition.x < 0 then
             cliffPositionRight = cliffPositionCenter
             cliffPositionLeft = {x = cliffPositionCenter.x + 4, y = cliffPositionCenter.y}
@@ -253,20 +256,35 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
             cliffPositionRight.y = cliffPositionRight.y + 4
             cliffPositionLeft.y = cliffPositionLeft.y + 4
         end
-    elseif orientation >= 0.625 and orientation < 0.875 then
-        --biter heading westish
-        cliff_orientation = "north-to-south"
+    elseif generalFacing == "east-west" then
+        if cliffPositionCenter.y - targetPosition.y < 0 then
+            cliffPositionRight = cliffPositionCenter
+            cliffPositionLeft = {y = cliffPositionCenter.y + 4, x = cliffPositionCenter.x}
+        else
+            cliffPositionLeft = cliffPositionCenter
+            cliffPositionRight = {y = cliffPositionCenter.y - 4, x = cliffPositionCenter.x}
+        end
+        if cliffPositionCenter.x - targetPosition.x < -2 then
+            cliffPositionRight.x = cliffPositionRight.x + 4
+            cliffPositionLeft.x = cliffPositionLeft.x + 4
+        end
     end
 
-    local cliffEntityLeft = surface.create_entity {name = "cliff", position = cliffPositionLeft, force = "neutral", cliff_orientation = cliff_orientation, raise_built = true}
-    local cliffEntityRight = surface.create_entity {name = "cliff", position = cliffPositionRight, force = "neutral", cliff_orientation = cliff_orientation, raise_built = true}
+    local cliffEntityLeft = surface.create_entity {name = "cliff", position = cliffPositionLeft, force = "neutral", cliff_orientation = cliffTypeLeft, raise_built = true}
+    local cliffEntityRight = surface.create_entity {name = "cliff", position = cliffPositionRight, force = "neutral", cliff_orientation = cliffTypeRight, raise_built = true}
 
-    if cliffEntityLeft ~= nil and cliffEntityLeft.valid then
-        cliffEntityLeft.update_connections()
+    if cliffEntityLeft == nil or not cliffEntityLeft.valid or cliffEntityRight == nil or not cliffEntityRight.valid then
+        -- One of the cliffs isn't good so remove both silently.
+        if cliffEntityLeft ~= nil and cliffEntityLeft.valid then
+            cliffEntityLeft.destroy(false, false)
+        end
+        if cliffEntityRight ~= nil and cliffEntityRight.valid then
+            cliffEntityRight.destroy(false, false)
+        end
     end
-    if cliffEntityRight ~= nil and cliffEntityRight.valid then
-        cliffEntityRight.update_connections()
-    end
+
+    Reincarnation.DisplaceEntitiesInBoundingBox(surface, cliffEntityLeft)
+    Reincarnation.DisplaceEntitiesInBoundingBox(surface, cliffEntityRight)
 end
 
 return Reincarnation
