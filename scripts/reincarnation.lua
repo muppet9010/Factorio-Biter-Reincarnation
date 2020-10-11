@@ -9,6 +9,7 @@ local Reincarnation = {}
 local maxQueueCyclesPerSecond = 60
 local reincarnationType = {tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff"}
 local unitsIgnored = {character = "character"} --TODO: add klonons mods to this as it adds units
+local movableEntityTypes = {unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle"}
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
@@ -132,6 +133,7 @@ Reincarnation.ProcessReincarnationQueue = function()
             elseif type == reincarnationType.rock then
                 Reincarnation.AddRockNearPosition(surface, targetPosition)
             elseif type == reincarnationType.cliff then
+                --TODO
             else
                 game.print("TODO: " .. tostring(type))
             end
@@ -162,8 +164,8 @@ end
 
 Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
     --make 2 lots of fire to ensure the tree catches fire
-    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
-    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
+    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
+    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
 end
 
 Reincarnation.AddRockNearPosition = function(surface, targetPosition)
@@ -181,23 +183,28 @@ Reincarnation.AddRockNearPosition = function(surface, targetPosition)
         return nil
     end
 
-    if displaceRequired then
-        local rockPrototype = game.entity_prototypes[rockType.name]
-        local positionedBoundingBox = Utils.ApplyBoundingBoxToPosition(newPosition, rockPrototype.collision_box)
-        if global.largeReincarnationsPush then
-            --move stuff
-            for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, true, nil, true, true)) do
-                --TODO - needs writing
-            end
-        else
-            Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, nil, false, nil)
-        end
-    end
-
-    local newRock = surface.create_entity {name = rockType.name, position = newPosition, force = "neutral"}
+    local newRock = surface.create_entity {name = rockType.name, position = newPosition, force = "neutral", raise_built = true}
     if newRock == nil then
         Logging.LogPrint("Failed to create rock at found position")
         return nil
+    end
+
+    if displaceRequired then
+        for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, newRock.bounding_box, true, nil, true, true, {newRock})) do
+            local entityMoved = false
+            if global.largeReincarnationsPush then
+                if movableEntityTypes[entity.type] ~= nil then
+                    local entityNewPosition = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.1)
+                    if entityNewPosition ~= nil then
+                        entity.teleport(entityNewPosition)
+                        entityMoved = true
+                    end
+                end
+                if not entityMoved then
+                    entity.die("neutral", newRock)
+                end
+            end
+        end
     end
 end
 

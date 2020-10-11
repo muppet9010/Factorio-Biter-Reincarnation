@@ -4,15 +4,47 @@ local factorioUtil = require("__core__/lualib/util")
 Utils.DeepCopy = factorioUtil.table.deepcopy
 Utils.TableMerge = factorioUtil.merge -- takes an array of tables and returns a new table with copies of their contents
 
-function Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, onlyDestructable, onlyKillable)
+function Utils.Are2EntitiesTheSame(entity1, entity2)
+    --Uses unit number if both support it, otherwise has to compare a lot of attributes to try and work out if they are the same base entity.
+    if not entity1.valid or not entity2.valid then
+        return false
+    end
+    if entity1.unit_number ~= nil and entity2.unit_number ~= nil then
+        if entity1.unit_number == entity2.unit_number then
+            return true
+        else
+            return false
+        end
+    else
+        if entity1.type == entity2.type and entity1.name == entity2.name and entity1.surface.index == entity2.surface.index and entity1.position.x == entity2.position.x and entity1.position.y == entity2.position.y and entity1.force.index == entity2.force.index and entity1.health == entity2.health then
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, onlyDestructable, onlyKillable, entitiesExcluded)
+    --Expand force affected to support range of opt in or opt out forces.
     local entitiesFound, filteredEntitiesFound = surface.find_entities(positionedBoundingBox), {}
     for k, entity in pairs(entitiesFound) do
         if entity.valid then
-            if (onlyForceAffected == nil) or (entity.force == onlyForceAffected) then
-                if (not onlyDestructable) or (entity.destructible) then
-                    if (not onlyKillable) or (entity.health ~= nil) then
-                        if (not collisionBoxOnlyEntities) or (Utils.IsCollisionBoxPopulated(entity.prototype.collision_box)) then
-                            table.insert(filteredEntitiesFound, entity)
+            local entityExcluded = false
+            if entitiesExcluded ~= nil and #entitiesExcluded > 0 then
+                for _, excludedEntity in pairs(entitiesExcluded) do
+                    if Utils.Are2EntitiesTheSame(entity, excludedEntity) then
+                        entityExcluded = true
+                        break
+                    end
+                end
+            end
+            if not entityExcluded then
+                if (onlyForceAffected == nil) or (entity.force == onlyForceAffected) then
+                    if (not onlyDestructable) or (entity.destructible) then
+                        if (not onlyKillable) or (entity.health ~= nil) then
+                            if (not collisionBoxOnlyEntities) or (Utils.IsCollisionBoxPopulated(entity.prototype.collision_box)) then
+                                table.insert(filteredEntitiesFound, entity)
+                            end
                         end
                     end
                 end
@@ -22,8 +54,8 @@ function Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionB
     return filteredEntitiesFound
 end
 
-function Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, killerEntity, collisionBoxOnlyEntities, onlyForceAffected)
-    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, true, true)) do
+function Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, killerEntity, collisionBoxOnlyEntities, onlyForceAffected, entitiesExcluded)
+    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, true, true, entitiesExcluded)) do
         if killerEntity ~= nil then
             entity.die("neutral", killerEntity)
         else
@@ -32,8 +64,8 @@ function Utils.KillAllKillableObjectsInArea(surface, positionedBoundingBox, kill
     end
 end
 
-function Utils.KillAllObjectsInArea(surface, positionedBoundingBox, killerEntity, onlyForceAffected)
-    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, false, onlyForceAffected, false, false)) do
+function Utils.KillAllObjectsInArea(surface, positionedBoundingBox, killerEntity, onlyForceAffected, entitiesExcluded)
+    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, false, onlyForceAffected, false, false, entitiesExcluded)) do
         if entity.destructible then
             if killerEntity ~= nil then
                 entity.die("neutral", killerEntity)
@@ -46,14 +78,14 @@ function Utils.KillAllObjectsInArea(surface, positionedBoundingBox, killerEntity
     end
 end
 
-function Utils.DestroyAllKillableObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected)
-    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, true, true)) do
+function Utils.DestroyAllKillableObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, entitiesExcluded)
+    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, collisionBoxOnlyEntities, onlyForceAffected, true, true, entitiesExcluded)) do
         entity.destroy({dp_cliff_correction = true, raise_destroy = true})
     end
 end
 
-function Utils.DestroyAllObjectsInArea(surface, positionedBoundingBox, onlyForceAffected)
-    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, false, onlyForceAffected, false, false)) do
+function Utils.DestroyAllObjectsInArea(surface, positionedBoundingBox, onlyForceAffected, entitiesExcluded)
+    for k, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, false, onlyForceAffected, false, false, entitiesExcluded)) do
         entity.destroy({dp_cliff_correction = true, raise_destroy = true})
     end
 end
@@ -254,8 +286,8 @@ function Utils.HandleFloatNumberAsChancedValue(value)
     return chancedValue
 end
 
---This doesn't guarentee correct on some of the edge cases, but is as close as possible assuming that 1/256 is the variance for the same number (Bilka, Dev on Discord)
 function Utils.FuzzyCompareDoubles(num1, logic, num2)
+    --This doesn't guarentee correct on some of the edge cases, but is as close as possible assuming that 1/256 is the variance for the same number (Bilka, Dev on Discord)
     local numDif = num1 - num2
     local variance = 1 / 256
     if logic == "=" then
