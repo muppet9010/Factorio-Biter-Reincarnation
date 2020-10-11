@@ -3,11 +3,12 @@ local Events = require("utility/events")
 local EventScheduler = require("utility/event-scheduler")
 local Logging = require("utility/logging")
 local BiomeTrees = require("utility/functions/biome-trees")
+local SharedData = require("shared-data")
 local Reincarnation = {}
 
 local maxQueueCyclesPerSecond = 60
-local reincarnationType = {tree = true, burningTree = true, rock = true, cliff = true}
-local unitsIgnored = {character = true}
+local reincarnationType = {tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff"}
+local unitsIgnored = {character = "character"} --TODO: add klonons mods to this as it adds units
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
@@ -25,6 +26,7 @@ end
 
 Reincarnation.CreateGlobals = function()
     global.reincarantionChanceList = global.reincarantionChanceList or {}
+    global.largeReincarnationsPush = global.largeReincarnationsPush or false
     global.rawTreeOnDeathChance = global.rawTreeOnDeathChance or 0
     global.rawBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance or 0
     global.rawRockOnDeathChance = global.rawRockOnDeathChance or 0
@@ -75,6 +77,10 @@ Reincarnation.UpdateSetting = function(event)
     --    global.rawLandfillOnDeathChance = tonumber(settings.global["turn-to-landfill-chance-percent"].value) / 100
     --end
 
+    if settingName == "biter_reincarnation-large_reincarnations_push" or settingName == nil then
+        global.largeReincarnationsPush = settings.global["biter_reincarnation-large_reincarnations_push"].value
+    end
+
     if settingName == "biter_reincarnation-max_reincarnations_per_second" or settingName == nil then
         local perSecond = settings.global["biter_reincarnation-max_reincarnations_per_second"].value
         local cyclesPerSecond = math.min(perSecond, maxQueueCyclesPerSecond)
@@ -124,7 +130,7 @@ Reincarnation.ProcessReincarnationQueue = function()
                 end
                 Reincarnation.AddTreeFireToPosition(surface, targetPosition)
             elseif type == reincarnationType.rock then
-                BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+                Reincarnation.AddRockNearPosition(surface, targetPosition)
             elseif type == reincarnationType.cliff then
             else
                 game.print("TODO: " .. tostring(type))
@@ -151,13 +157,50 @@ Reincarnation.OnEntityDiedUnit = function(event)
     local surface = entity.surface
     local targetPosition = entity.position
     local type = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarantionChanceList, "chance")
-    table.insert(global.reincarnationQueue, {loggedTick = event.tick, surface = surface, position = targetPosition, type = type})
+    table.insert(global.reincarnationQueue, {loggedTick = event.tick, surface = surface, position = targetPosition, type = type.name})
 end
 
 Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
     --make 2 lots of fire to ensure the tree catches fire
     surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
     surface.create_entity {name = "fire-flame-on-tree", position = targetPosition}
+end
+
+Reincarnation.AddRockNearPosition = function(surface, targetPosition)
+    local debug = true
+    local rockType = Utils.GetRandomEntryFromNormalisedDataSet(SharedData.RockTypes, "chance")
+    Logging.Log("Rock type: " .. rockType.name, debug)
+
+    local newPosition = surface.find_non_colliding_position(rockType.name, targetPosition, 3, 0.2)
+    local displace = false
+    if newPosition == nil then
+    --newPosition = surface.find_non_colliding_position(rockType.placementName, targetPosition, 3, 0.2)
+    --displace = true
+    end
+    if newPosition == nil then
+        Logging.LogPrint("No position for new rock found", debug)
+        return nil
+    end
+
+    --if displace then
+    local rockPrototype = game.entity_prototypes[rockType.name]
+    local positionedBoundingBox = Utils.ApplyBoundingBoxToPosition(targetPosition, rockPrototype.collision_box)
+    if global.largeReincarnationsPush then
+        --move stuff
+        for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, positionedBoundingBox, true, nil, true, true)) do
+            TODO
+        end
+    else
+        local shrunkPositionedBoundingBox = Utils.GrowBoundingBox(positionedBoundingBox, -0.2, -0.2) -- shrink the bounding box so it doesn't destroy things right on the edge, as this would be a valid placement position found.
+        Utils.KillAllKillableObjectsInArea(surface, shrunkPositionedBoundingBox, nil, false, nil)
+    end
+    --end
+
+    local newRock = surface.create_entity {name = rockType.name, position = newPosition, force = "neutral"}
+    if newRock == nil then
+        Logging.LogPrint("Failed to create rock at found position")
+        return nil
+    end
 end
 
 return Reincarnation
