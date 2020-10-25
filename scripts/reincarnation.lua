@@ -6,10 +6,10 @@ local BiomeTrees = require("utility/functions/biome-trees")
 local SharedData = require("shared-data")
 local Reincarnation = {}
 
-local maxQueueCyclesPerSecond = 60
-local reincarnationType = {tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff"}
-local unitsIgnored = {character = "character", compilatron = "compilatron"}
-local movableEntityTypes = {unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle"}
+local MaxQueueCyclesPerSecond = 60
+local ReincarnationType = {tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff"}
+local UnitsIgnored = {character = "character", compilatron = "compilatron"}
+local MovableEntityTypes = {unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle"}
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
@@ -69,7 +69,7 @@ Reincarnation.UpdateSetting = function(event)
 
     if settingName == "biter_reincarnation-max_reincarnations_per_second" or settingName == nil then
         local perSecond = settings.global["biter_reincarnation-max_reincarnations_per_second"].value
-        local cyclesPerSecond = math.min(perSecond, maxQueueCyclesPerSecond)
+        local cyclesPerSecond = math.min(perSecond, MaxQueueCyclesPerSecond)
         global.reincarnationQueueProcessedPerSecond = perSecond
         global.reincarnationQueueCyclesPerSecond = cyclesPerSecond
         global.reincarnationQueueProcessDelay = math.floor(60 / cyclesPerSecond)
@@ -80,10 +80,10 @@ Reincarnation.UpdateSetting = function(event)
     end
 
     local reincarantionChanceList = {
-        {name = reincarnationType.tree, chance = global.rawTreeOnDeathChance},
-        {name = reincarnationType.burningTree, chance = global.rawBurningTreeOnDeathChance},
-        {name = reincarnationType.rock, chance = global.rawRockOnDeathChance},
-        {name = reincarnationType.cliff, chance = global.rawCliffOnDeathChance}
+        {name = ReincarnationType.tree, chance = global.rawTreeOnDeathChance},
+        {name = ReincarnationType.burningTree, chance = global.rawBurningTreeOnDeathChance},
+        {name = ReincarnationType.rock, chance = global.rawRockOnDeathChance},
+        {name = ReincarnationType.cliff, chance = global.rawCliffOnDeathChance}
     }
     global.reincarantionChanceList = Utils.NormaliseChanceList(reincarantionChanceList, "chance", true)
 end
@@ -107,17 +107,17 @@ Reincarnation.ProcessReincarnationQueue = function()
         table.remove(global.reincarnationQueue, k)
         if details.loggedTick + global.maxTicksWaitForReincarnation >= game.tick then
             local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
-            if type == reincarnationType.tree then
+            if type == ReincarnationType.tree then
                 BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-            elseif type == reincarnationType.burningTree then
+            elseif type == ReincarnationType.burningTree then
                 local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
                 if createdTree ~= nil then
                     targetPosition = createdTree.position
                 end
                 Reincarnation.AddTreeFireToPosition(surface, targetPosition)
-            elseif type == reincarnationType.rock then
+            elseif type == ReincarnationType.rock then
                 Reincarnation.AddRockNearPosition(surface, targetPosition)
-            elseif type == reincarnationType.cliff then
+            elseif type == ReincarnationType.cliff then
                 Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
             else
                 error("unsupported type: " .. type)
@@ -137,15 +137,19 @@ Reincarnation.OnEntityDiedUnit = function(event)
     if not entity.has_flag("breaths-air") then
         return
     end
-    if unitsIgnored[entity.name] then
+    if UnitsIgnored[entity.name] then
         return
     end
 
+    local selectedReincarnationType = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarantionChanceList, "chance")
+    if selectedReincarnationType == nil then
+        return
+    end
     local details = {
         loggedTick = event.tick,
         surface = entity.surface,
         position = entity.position,
-        type = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarantionChanceList, "chance").name,
+        type = selectedReincarnationType.name,
         orientation = entity.orientation
     }
     table.insert(global.reincarnationQueue, details)
@@ -187,7 +191,7 @@ Reincarnation.DisplaceEntitiesInBoundingBox = function(surface, createdEntity)
     for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, createdEntity.bounding_box, true, nil, true, true, {createdEntity})) do
         local entityMoved = false
         if global.largeReincarnationsPush then
-            if movableEntityTypes[entity.type] ~= nil then
+            if MovableEntityTypes[entity.type] ~= nil then
                 local entityNewPosition = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.1)
                 if entityNewPosition ~= nil then
                     entity.teleport(entityNewPosition)

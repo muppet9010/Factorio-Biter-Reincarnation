@@ -1,6 +1,6 @@
 {
     "name": "biter_reincarnation",
-    "version": "19.0.11",
+    "version": "19.0.12",
     "title": "Biter Reincarnation",
     "author": "Muppet9010",
     "contact": "",
@@ -10,5 +10,5 @@
         "base >= 1.0.0",
         "!alien-biomes"
     ],
-    "description": "On death Biters reincarnate as the true perpetual enemy, trees"
+    "description": "When an enemy unit dies it tries to reincarnate back in to nature, be it a tree, rock or cliff. Occasionally the angry ones can burst into a flaming tree."
 }
