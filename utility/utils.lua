@@ -344,6 +344,18 @@ function Utils.GetTableNonNilLength(table)
     return count
 end
 
+function Utils.GetFirstTableKey(table)
+    return next(table)
+end
+
+function Utils.GetFirstTableValue(table)
+    return table[next(table)]
+end
+
+function Utils.GetFirstTableKeyValue(table)
+    return next(table), table[next(table)]
+end
+
 function Utils.GetMaxKey(table)
     local max_key = 0
     for k in pairs(table) do
@@ -702,7 +714,7 @@ function Utils.DisplayTimeOfTicks(inputTicks, displayLargestTimeUnit, displaySma
 end
 
 function Utils._CreatePlacementTestEntityPrototype(entityToClone, newEntityName, subgroup, collisionMask)
-    -- TODO: doesn't handle mipmaps at all presently. Also ignores any of the extra data in an icons table of "Types/IconData". Think this should just duplicate the target icons table entry.
+    -- Doesn't handle mipmaps at all presently. Also ignores any of the extra data in an icons table of "Types/IconData". Think this should just duplicate the target icons table entry.
     local clonedIcon = entityToClone.icon
     local clonedIconSize = entityToClone.icon_size
     if clonedIcon == nil then
@@ -747,7 +759,9 @@ function Utils.CreateWaterPlacementTestEntityPrototype(entityToClone, newEntityN
     return Utils._CreatePlacementTestEntityPrototype(entityToClone, newEntityName, subgroup, {"ground-tile", "colliding-with-tiles-only"})
 end
 
-function Utils.GetValidPositionForEntityNearPosition(entityName, surface, centerPos, radius, maxAttempts, searchIncrement, allowNonTileCenter)
+--[[
+    NOT NEEDED AS surface.find_non_colliding_position() STARTS IN CENTER AND WORKS OUT - MAYBE DIDN'T IN THE PAST
+    function Utils.GetValidPositionForEntityNearPosition(entityName, surface, centerPos, radius, maxAttempts, searchIncrement, allowNonTileCenter)
     local pos
     local attempts = 1
     searchIncrement = searchIncrement or 1
@@ -764,28 +778,29 @@ function Utils.GetValidPositionForEntityNearPosition(entityName, surface, center
         end
     end
     return nil
-end
-
+end]]
 function Utils.ToBoolean(text)
+    if text == nil then
+        return nil
+    end
+    if type(text) == "boolean" then
+        return text
+    end
     text = string.lower(text)
-    if text ~= nil and text == "true" then
+    if text == "true" then
         return true
-    elseif text ~= nil and text == "false" then
+    elseif text == "false" then
         return false
     end
     return nil
 end
 
 function Utils.RandomLocationInRadius(centrePos, maxRadius, minRadius)
-    local angleRad = math.random() * (math.pi * 2)
+    local angle = math.random(0, 360)
     minRadius = minRadius or 0
     local radiusMultiplier = maxRadius - minRadius
     local distance = minRadius + (math.random() * radiusMultiplier)
-    local randomPos = {
-        x = (distance * math.sin(angleRad)) + centrePos.x,
-        y = (distance * -math.cos(angleRad)) + centrePos.y
-    }
-    return randomPos
+    return Utils.GetPositionForAngledDistance(centrePos, distance, angle)
 end
 
 function Utils.GetPositionForAngledDistance(startingPos, distance, angle)
@@ -914,7 +929,7 @@ end
 Utils.TryInsertInventoryContents = function(contents, targetInventory, dropUnmovedOnGround, ratioToMove)
     -- Just takes a list of item names and counts that you get from the inventory.get_contents(). Updates the passed in contents object.
     -- Returns true/false if all items were moved successfully.
-    if contents == nil or #contents == 0 then
+    if Utils.IsTableEmpty(contents) then
         return
     end
     local sourceOwner, itemAllMoved = nil, true
@@ -1014,7 +1029,46 @@ Utils.TrackBestFuelCount = function(trackingTable, itemName, itemCount)
         trackingTable.fuelValue = fuelValue
         return true
     end
+    if trackingTable.fuelName == itemName and itemCount > trackingTable.fuelCount then
+        trackingTable.fuelCount = itemCount
+        return true
+    end
     return false
+end
+
+Utils.MakeRecipePrototype = function(recipeName, resultItemName, enabled, ingredientLists, energyLists)
+    --[[
+        Takes tables of the various recipe types (normal, expensive and ingredients) and makes the required recipe prototypes from them. Only makes the version if the ingredientsList includes the type. So supplying just energyLists types doesn't make new versions.
+        ingredientLists is a table with optional tables for "normal", "expensive" and "ingredients" tables within them. Often generatered by Utils.GetRecipeIngredientsAddedTogeather().
+        energyLists is a table with optional keys for "normal", "expensive" and "ingredients". The value of the keys is the energy_required value.
+    ]]
+    local recipePrototype = {
+        type = "recipe",
+        name = recipeName
+    }
+    if ingredientLists.ingredients ~= nil then
+        recipePrototype.energy_required = energyLists.ingredients
+        recipePrototype.enabled = enabled
+        recipePrototype.result = resultItemName
+        recipePrototype.ingredients = ingredientLists.ingredients
+    end
+    if ingredientLists.normal ~= nil then
+        recipePrototype.normal = {
+            energy_required = energyLists.normal or energyLists.ingredients,
+            enabled = enabled,
+            result = resultItemName,
+            ingredients = ingredientLists.normal
+        }
+    end
+    if ingredientLists.expensive ~= nil then
+        recipePrototype.expensive = {
+            energy_required = energyLists.expensive or energyLists.ingredients,
+            enabled = enabled,
+            result = resultItemName,
+            ingredients = ingredientLists.expensive
+        }
+    end
+    return recipePrototype
 end
 
 Utils.GetRecipeIngredientsAddedTogeather = function(recipeIngredientHandlingTables)
@@ -1085,10 +1139,13 @@ Utils.GetRecipeIngredientsAddedTogeather = function(recipeIngredientHandlingTabl
     return ingredientsTable
 end
 
-Utils.GetRecipeAttribute = function(recipe, attributeName, recipeCostType)
-    -- recipeType defaults to the no cost type if not supplied. Values are: "none", "normal" and "expensive".
-    recipeCostType = recipeCostType or "none"
-    if recipeCostType == "none" and recipe[attributeName] ~= nil then
+Utils.GetRecipeAttribute = function(recipe, attributeName, recipeCostType, defaultValue)
+    --[[
+        Returns the attributeName for the recipeCostType if available, otherwise the inline ingredients version.
+        recipeType defaults to the no cost type if not supplied. Values are: "ingredients", "normal" and "expensive".
+    --]]
+    recipeCostType = recipeCostType or "ingredients"
+    if recipeCostType == "ingredients" and recipe[attributeName] ~= nil then
         return recipe[attributeName]
     elseif recipe[recipeCostType] ~= nil and recipe[recipeCostType][attributeName] ~= nil then
         return recipe[recipeCostType][attributeName]
@@ -1102,7 +1159,71 @@ Utils.GetRecipeAttribute = function(recipe, attributeName, recipeCostType)
         return recipe["expensive"][attributeName]
     end
 
-    return nil
+    return defaultValue -- may well be nil
+end
+
+Utils.DoesRecipeResultsIncludeItemName = function(recipePrototype, itemName)
+    for _, recipeBase in pairs({recipePrototype, recipePrototype.normal, recipePrototype.expensive}) do
+        if recipeBase ~= nil then
+            if recipeBase.result ~= nil and recipeBase.result == itemName then
+                return true
+            elseif recipeBase.results ~= nil and Utils.GetTableKeyWithInnerKeyValue(recipeBase.results, "name", itemName) ~= nil then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+Utils.RemoveEntitiesRecipesFromTechnologies = function(entityPrototype, recipes, technolgies)
+    --[[
+        From the provided technology list remove all provided recipes from being unlocked that create an item that can place a given entity prototype.
+        Returns a table of the technologies affected or a blank table if no technologies are affected.
+    ]]
+    local technologiesChanged = {}
+    local placedByItemName
+    if entityPrototype.minable ~= nil and entityPrototype.minable.result ~= nil then
+        placedByItemName = entityPrototype.minable.result
+    else
+        return technologiesChanged
+    end
+    for _, recipePrototype in pairs(recipes) do
+        if Utils.DoesRecipeResultsIncludeItemName(recipePrototype, placedByItemName) then
+            recipePrototype.enabled = false
+            for _, technologyPrototype in pairs(technolgies) do
+                if technologyPrototype.effects ~= nil then
+                    for effectIndex, effect in pairs(technologyPrototype.effects) do
+                        if effect.type == "unlock-recipe" and effect.recipe ~= nil and effect.recipe == recipePrototype.name then
+                            table.remove(technologyPrototype.effects, effectIndex)
+                            table.insert(technologiesChanged, technologyPrototype)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return technologiesChanged
+end
+
+Utils.SplitStringOnCharacters = function(text, splitCharacters, returnAskey)
+    local list = {}
+    local results = text:gmatch("[^" .. splitCharacters .. "]*")
+    for phrase in results do
+        phrase = Utils.StringTrim(phrase)
+        if phrase ~= nil and phrase ~= "" then
+            if returnAskey ~= nil and returnAskey == true then
+                list[phrase] = true
+            else
+                table.insert(list, phrase)
+            end
+        end
+    end
+    return list
+end
+
+Utils.StringTrim = function(text)
+    -- trim6 from http://lua-users.org/wiki/StringTrim
+    return string.match(text, "^()%s*$") and "" or string.match(text, "^%s*(.*%S)")
 end
 
 return Utils

@@ -107,24 +107,26 @@ Reincarnation.ProcessReincarnationQueue = function()
         table.remove(global.reincarnationQueue, k)
         if details.loggedTick + global.maxTicksWaitForReincarnation >= game.tick then
             local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
-            if type == ReincarnationType.tree then
-                BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-            elseif type == ReincarnationType.burningTree then
-                local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-                if createdTree ~= nil then
-                    targetPosition = createdTree.position
+            if surface ~= nil and surface.valid then
+                if type == ReincarnationType.tree then
+                    BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+                elseif type == ReincarnationType.burningTree then
+                    local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+                    if createdTree ~= nil then
+                        targetPosition = createdTree.position
+                    end
+                    Reincarnation.AddTreeFireToPosition(surface, targetPosition)
+                elseif type == ReincarnationType.rock then
+                    Reincarnation.AddRockNearPosition(surface, targetPosition)
+                elseif type == ReincarnationType.cliff then
+                    Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
+                else
+                    error("unsupported type: " .. type)
                 end
-                Reincarnation.AddTreeFireToPosition(surface, targetPosition)
-            elseif type == ReincarnationType.rock then
-                Reincarnation.AddRockNearPosition(surface, targetPosition)
-            elseif type == ReincarnationType.cliff then
-                Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
-            else
-                error("unsupported type: " .. type)
+                doneThisCycle = doneThisCycle + 1
+                global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
+                Logging.Log("1 reincarnation done", debug)
             end
-            doneThisCycle = doneThisCycle + 1
-            global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
-            Logging.Log("1 reincarnation done", debug)
         end
         if doneThisCycle >= tasksThisCycle then
             return

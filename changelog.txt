@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 20.0.14
+Date: 2020-12-04
+  Features:
+  Changes:
+  Bugfixes:
+    - No longer errors if the surface is deleted with queued reincarnations on it.
+  Info:
+    - Muppet Utility library updated including tree generation fixes encountered in other mods.
+---------------------------------------------------------------------------------------------------
 Version: 20.0.13
 Date: 2020-11-30
   Features:

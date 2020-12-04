@@ -28,12 +28,14 @@ Events.RegisterHandlerEvent = function(eventName, handlerName, handlerFunction, 
     return eventId
 end
 
--- Called from the root of Control.lua for custom inputs (key bindings) as their names are handled specially.
-Events.RegisterCustomInput = function(actionName)
+-- Called from OnLoad() from each script file. Registers the custom inputs (key bindings) as their names in Factorio and the handler function for all just custom inputs. These are handled specially in Factorio.
+Events.RegisterHandlerCustomInput = function(actionName, handlerName, handlerFunction)
     if actionName == nil then
-        error("Events.RegisterCustomInput called with missing arguments")
+        error("Events.RegisterHandlerCustomInput called with missing arguments")
     end
     script.on_event(actionName, Events._HandleEvent)
+    MOD.events[actionName] = MOD.events[actionName] or {}
+    MOD.events[actionName][handlerName] = handlerFunction
 end
 
 -- Called when needed
