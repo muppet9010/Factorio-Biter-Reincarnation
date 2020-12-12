@@ -438,6 +438,38 @@ function Utils.TableKeyToArray(aTable)
     return newArray
 end
 
+function Utils.TableKeyToCommaString(aTable)
+    -- Doesn't support commas in values or nested tables. Really for logging.
+    local newString = ""
+    if Utils.IsTableEmpty(aTable) then
+        return newString
+    end
+    for key in pairs(aTable) do
+        if newString == "" then
+            newString = key
+        else
+            newString = newString .. ", " .. tostring(key)
+        end
+    end
+    return newString
+end
+
+function Utils.TableValueToCommaString(aTable)
+    -- Doesn't support commas in values or nested tables. Really for logging.
+    local newString = ""
+    if Utils.IsTableEmpty(aTable) then
+        return newString
+    end
+    for _, value in pairs(aTable) do
+        if newString == "" then
+            newString = value
+        else
+            newString = newString .. ", " .. tostring(value)
+        end
+    end
+    return newString
+end
+
 function Utils.TableContentsToJSON(targetTable, name, singleLineOutput)
     -- targetTable is the only mandatory parameter. name if provided will appear as a "name:JSONData" output. singleLineOutput removes all lines and spacing from the output.
     singleLineOutput = singleLineOutput or false
@@ -539,6 +571,17 @@ function Utils.GetTableKeyWithInnerKeyValue(theTable, key, value)
     return nil
 end
 
+function Utils.TableValuesToKey(tableWithValues)
+    if tableWithValues == nil then
+        return nil
+    end
+    local newTable = {}
+    for _, value in pairs(tableWithValues) do
+        newTable[value] = value
+    end
+    return newTable
+end
+
 function Utils.GetRandomFloatInRange(lower, upper)
     return lower + math.random() * (upper - lower)
 end
@@ -580,17 +623,6 @@ function Utils.GetRandomEntryFromNormalisedDataSet(dataSet, chancePropertyName)
         chanceRangeLow = chanceRangeHigh
     end
     return nil
-end
-
-function Utils.DisableSiloScript()
-    -- OnLoad
-    if remote.interfaces["silo_script"] == nil then
-        return
-    end
-    local items = remote.call("silo_script", "get_tracked_items")
-    for itemName in pairs(items) do
-        remote.call("silo_script", "remove_tracked_item", itemName)
-    end
 end
 
 function Utils.DisableWinOnRocket()

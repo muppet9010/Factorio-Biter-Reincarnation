@@ -5,7 +5,7 @@ When an enemy unit dies it tries to reincarnate back in to nature, be it a tree,
 Reincarnation Types
 ===============
 
-- Tree - Will be biome appropriate for where the biter dies. Only base game tiles are supported, but modded trees should behave correctly. When the death is on a player placed ground type (floor) the underlying tile type is used.
+- Tree - Will be biome appropriate for where the biter dies, using the natural tile under player placed flooring (concrete).
 - Burning Tree - Will be a regular tree that is on fire. The fire will spread to any adjacent tree.
 - Rocks - Will generally be the big rock types, with the occasional huge rock. Where possible the rocks will appear on clear ground, however, if needed they will crush or push entities out of the way.
 - Cliffs - Where possible the cliffs will appear on clear ground, however, if needed they will crush or push entities out of the way.
@@ -21,5 +21,4 @@ Mod Behaviour
 
 Mod Incompatibility
 ==============
-- Doesn't support modded tiles or mods that do their own map creation and so new landscape mods aren't supported.
-- Alien biomes isn't supported as I haven't worked out how to dynamically handle its various tile & tree environment variations.
+- If biter dies on a vanilla game tile or with Alien Biomes mod a biome specific tree will be selected, otherwise the tree will be random on other modded tiles. Should support and handle fully defined custom tree types, otherwise they will be ignored.

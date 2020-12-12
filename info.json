@@ -1,14 +1,13 @@
 {
     "name": "biter_reincarnation",
-    "version": "20.0.14",
+    "version": "20.0.15",
     "title": "Biter Reincarnation",
     "author": "Muppet9010",
     "contact": "",
     "homepage": "",
     "factorio_version": "1.1",
     "dependencies": [
-        "base >= 1.1.0",
-        "!alien-biomes"
+        "base >= 1.1.0"
     ],
     "description": "When an enemy unit dies it tries to reincarnate back in to nature, be it a tree, rock or cliff. Occasionally the angry ones can burst into a flaming tree."
 }
