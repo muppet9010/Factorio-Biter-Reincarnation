@@ -18,6 +18,7 @@ Reincarnation.OnLoad = function()
 end
 
 Reincarnation.OnStartup = function()
+    BiomeTrees.OnStartup()
     Reincarnation.UpdateSetting(nil)
     -- Do at an offset from 0 to try and avoid bunching on other scheduled things ticks
     if not EventScheduler.IsEventScheduled("Reincarnation.ProcessReincarnationQueue", nil, nil) then
