@@ -198,6 +198,7 @@ BiomeTrees._GetEnvironmentData = function()
     else
         environmentData.moistureRangeAttributeName = {optimal = "water_optimal", range = "water_range"}
         environmentData.tileTempCalculations = {
+            -- on scale of 0 to 1 = 0 to 35. 5 is the lowest tempt tree.
             scaleMultiplyer = 35,
             min = 5
         }
