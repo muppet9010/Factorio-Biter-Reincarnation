@@ -4,6 +4,7 @@ Date: 2020-12-14
   Features:
   Changes:
   Bugfixes:
+    - Change naughty code use from 20.0.15 and 20.0.16. Caused crashs on loading a save made after updating the mod.
   Info:
 ---------------------------------------------------------------------------------------------------
 Version: 20.0.16
