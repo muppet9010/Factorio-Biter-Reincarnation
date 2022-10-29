@@ -7,13 +7,13 @@ local SharedData = require("shared-data")
 local Reincarnation = {}
 
 local MaxQueueCyclesPerSecond = 60
-local ReincarnationType = {tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff"}
-local UnitsIgnored = {character = "character", compilatron = "compilatron"}
-local MovableEntityTypes = {unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle"}
+local ReincarnationType = { tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff" }
+local UnitsIgnored = { character = "character", compilatron = "compilatron" }
+local MovableEntityTypes = { unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle" }
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
-    Events.RegisterHandlerEvent(defines.events.on_entity_died, "Reincarnation.OnEntityDiedUnit", Reincarnation.OnEntityDiedUnit, "TypeIsUnit", {{filter = "type", type = "unit"}})
+    Events.RegisterHandlerEvent(defines.events.on_entity_died, "Reincarnation.OnEntityDiedUnit", Reincarnation.OnEntityDiedUnit, "TypeIsUnit", { { filter = "type", type = "unit" } })
     EventScheduler.RegisterScheduledEventType("Reincarnation.ProcessReincarnationQueue", Reincarnation.ProcessReincarnationQueue)
 end
 
@@ -27,7 +27,7 @@ Reincarnation.OnStartup = function()
 end
 
 Reincarnation.CreateGlobals = function()
-    global.reincarantionChanceList = global.reincarantionChanceList or {}
+    global.reincarnationChanceList = global.reincarnationChanceList or {}
     global.largeReincarnationsPush = global.largeReincarnationsPush or false
     global.rawTreeOnDeathChance = global.rawTreeOnDeathChance or 0
     global.rawBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance or 0
@@ -80,13 +80,13 @@ Reincarnation.UpdateSetting = function(event)
         global.maxTicksWaitForReincarnation = settings.global["biter_reincarnation-max_seconds_wait_for_reincarnation"].value * 60
     end
 
-    local reincarantionChanceList = {
-        {name = ReincarnationType.tree, chance = global.rawTreeOnDeathChance},
-        {name = ReincarnationType.burningTree, chance = global.rawBurningTreeOnDeathChance},
-        {name = ReincarnationType.rock, chance = global.rawRockOnDeathChance},
-        {name = ReincarnationType.cliff, chance = global.rawCliffOnDeathChance}
+    local reincarnationChanceList = {
+        { name = ReincarnationType.tree, chance = global.rawTreeOnDeathChance },
+        { name = ReincarnationType.burningTree, chance = global.rawBurningTreeOnDeathChance },
+        { name = ReincarnationType.rock, chance = global.rawRockOnDeathChance },
+        { name = ReincarnationType.cliff, chance = global.rawCliffOnDeathChance }
     }
-    global.reincarantionChanceList = Utils.NormaliseChanceList(reincarantionChanceList, "chance", true)
+    global.reincarnationChanceList = Utils.NormaliseChanceList(reincarnationChanceList, "chance", true)
 end
 
 Reincarnation.ProcessReincarnationQueue = function()
@@ -96,7 +96,7 @@ Reincarnation.ProcessReincarnationQueue = function()
 
     local doneThisCycle = 0
     if global.reincarnationQueueCyclesDoneThisSecond >= global.reincarnationQueueCyclesPerSecond then
-        Logging.Log("reseting current global counts", debug)
+        Logging.Log("resetting current global counts", debug)
         global.reincarnationQueueDoneThisSecond = 0
         global.reincarnationQueueCyclesDoneThisSecond = 0
     end
@@ -144,7 +144,7 @@ Reincarnation.OnEntityDiedUnit = function(event)
         return
     end
 
-    local selectedReincarnationType = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarantionChanceList, "chance")
+    local selectedReincarnationType = Utils.GetRandomEntryFromNormalisedDataSet(global.reincarnationChanceList, "chance")
     if selectedReincarnationType == nil then
         return
     end
@@ -160,8 +160,8 @@ end
 
 Reincarnation.AddTreeFireToPosition = function(surface, targetPosition)
     -- Make 2 lots of fire to ensure the tree catches fire
-    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
-    surface.create_entity {name = "fire-flame-on-tree", position = targetPosition, raise_built = true}
+    surface.create_entity { name = "fire-flame-on-tree", position = targetPosition, raise_built = true }
+    surface.create_entity { name = "fire-flame-on-tree", position = targetPosition, raise_built = true }
 end
 
 Reincarnation.AddRockNearPosition = function(surface, targetPosition)
@@ -179,7 +179,7 @@ Reincarnation.AddRockNearPosition = function(surface, targetPosition)
         return nil
     end
 
-    local rockEntity = surface.create_entity {name = typeData.name, position = newPosition, force = "neutral", raise_built = true}
+    local rockEntity = surface.create_entity { name = typeData.name, position = newPosition, force = "neutral", raise_built = true }
     if rockEntity == nil then
         Logging.LogPrint("Failed to create rock at found position")
         return nil
@@ -191,7 +191,7 @@ Reincarnation.AddRockNearPosition = function(surface, targetPosition)
 end
 
 Reincarnation.DisplaceEntitiesInBoundingBox = function(surface, createdEntity)
-    for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, createdEntity.bounding_box, true, nil, true, true, {createdEntity})) do
+    for _, entity in pairs(Utils.ReturnAllObjectsInArea(surface, createdEntity.bounding_box, true, nil, true, true, { createdEntity })) do
         local entityMoved = false
         if global.largeReincarnationsPush then
             if MovableEntityTypes[entity.type] ~= nil then
@@ -216,22 +216,22 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
 
     local cliffPositionLeft, cliffPositionRight, generalFacing, cliffTypeLeft, cliffTypeRight
     if orientation >= 0.875 or orientation < 0.125 then
-        -- Biter heading northish
+        -- Biter heading north-ish
         generalFacing = "north-south"
         cliffTypeLeft = "none-to-west"
         cliffTypeRight = "east-to-none"
     elseif orientation >= 0.125 and orientation < 0.375 then
-        -- Biter heading eastish
+        -- Biter heading east-ish
         generalFacing = "east-west"
         cliffTypeLeft = "none-to-north"
         cliffTypeRight = "none-to-west"
     elseif orientation >= 0.375 and orientation < 0.625 then
-        -- Biter heading southish
+        -- Biter heading south-ish
         generalFacing = "north-south"
         cliffTypeLeft = "west-to-none"
         cliffTypeRight = "none-to-east"
     elseif orientation >= 0.625 and orientation < 0.875 then
-        -- Biter heading westish
+        -- Biter heading west-ish
         generalFacing = "east-west"
         cliffTypeLeft = "north-to-none"
         cliffTypeRight = "east-to-none"
@@ -239,10 +239,10 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
     if generalFacing == "north-south" then
         if cliffPositionCenter.x - targetPosition.x < 0 then
             cliffPositionRight = cliffPositionCenter
-            cliffPositionLeft = {x = cliffPositionCenter.x + 4, y = cliffPositionCenter.y}
+            cliffPositionLeft = { x = cliffPositionCenter.x + 4, y = cliffPositionCenter.y }
         else
             cliffPositionLeft = cliffPositionCenter
-            cliffPositionRight = {x = cliffPositionCenter.x - 4, y = cliffPositionCenter.y}
+            cliffPositionRight = { x = cliffPositionCenter.x - 4, y = cliffPositionCenter.y }
         end
         if cliffPositionCenter.y - targetPosition.y < -2 then
             cliffPositionRight.y = cliffPositionRight.y + 4
@@ -251,10 +251,10 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
     elseif generalFacing == "east-west" then
         if cliffPositionCenter.y - targetPosition.y < 0 then
             cliffPositionRight = cliffPositionCenter
-            cliffPositionLeft = {y = cliffPositionCenter.y + 4, x = cliffPositionCenter.x}
+            cliffPositionLeft = { y = cliffPositionCenter.y + 4, x = cliffPositionCenter.x }
         else
             cliffPositionLeft = cliffPositionCenter
-            cliffPositionRight = {y = cliffPositionCenter.y - 4, x = cliffPositionCenter.x}
+            cliffPositionRight = { y = cliffPositionCenter.y - 4, x = cliffPositionCenter.x }
         end
         if cliffPositionCenter.x - targetPosition.x < -2 then
             cliffPositionRight.x = cliffPositionRight.x + 4
@@ -262,8 +262,8 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
         end
     end
 
-    local cliffEntityLeft = surface.create_entity {name = "cliff", position = cliffPositionLeft, force = "neutral", cliff_orientation = cliffTypeLeft, raise_built = true}
-    local cliffEntityRight = surface.create_entity {name = "cliff", position = cliffPositionRight, force = "neutral", cliff_orientation = cliffTypeRight, raise_built = true}
+    local cliffEntityLeft = surface.create_entity { name = "cliff", position = cliffPositionLeft, force = "neutral", cliff_orientation = cliffTypeLeft, raise_built = true }
+    local cliffEntityRight = surface.create_entity { name = "cliff", position = cliffPositionRight, force = "neutral", cliff_orientation = cliffTypeRight, raise_built = true }
 
     if cliffEntityLeft == nil or not cliffEntityLeft.valid or cliffEntityRight == nil or not cliffEntityRight.valid then
         -- One of the cliffs isn't good so remove both silently.

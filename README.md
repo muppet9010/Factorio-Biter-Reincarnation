@@ -10,7 +10,7 @@ Reincarnation Types
 - Rocks - Will generally be the big rock types, with the occasional huge rock. Where possible the rocks will appear on clear ground, however, if needed they will crush or push entities out of the way.
 - Cliffs - Where possible the cliffs will appear on clear ground, however, if needed they will crush or push entities out of the way.
 
-Mod Behaviour
+Mod Behavior
 ===============
 
 - Any units that breath air will trigger reincarnation then they die. The exception is the player character and compilatron.
