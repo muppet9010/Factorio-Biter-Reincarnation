@@ -18,11 +18,29 @@ local Reincarnation = {}
 ---@field type string
 ---@field orientation double
 
+---@class BiterWontBeRevived_Event
+---@field name uint # The event Id.
+---@field tick uint
+---@field mod_name string # The mod that raised the event (`biter_revive`).
+---@field entity LuaEntity
+---@field entityName string|nil # Will be populated if obtained at time event is raised.
+---@field force LuaForce|nil # Will be populated if obtained at time event is raised.
+
+---@class BiterRevivedFailed_Event
+---@field name uint # The event Id.
+---@field tick uint
+---@field mod_name string # The mod that raised the event (`biter_revive`).
+---@field prototypeName string
+---@field surface LuaSurface
+---@field position MapPosition
+---@field orientation double
+---@field force LuaForce
+
 local MaxQueueCyclesPerSecond = 60
 ---@enum ReincarnationType
 local ReincarnationType = { tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff" }
 ---@enum UnitsIgnored
-local UnitsIgnored = { character = "character", compilatron = "compilatron" }
+local UnitsIgnored = { compilatron = "compilatron" }
 ---@enum MovableEntityTypes
 local MovableEntityTypes = { unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle" }
 
@@ -30,8 +48,17 @@ local DebugLogging = false
 
 Reincarnation.OnLoad = function()
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
-    Events.RegisterHandlerEvent(defines.events.on_entity_died, "Reincarnation.OnEntityDiedUnit", Reincarnation.OnEntityDiedUnit, { { filter = "type", type = "unit" } })
     EventScheduler.RegisterScheduledEventType("Reincarnation.ProcessReincarnationQueue", Reincarnation.ProcessReincarnationQueue)
+
+    -- If Biter Revive mod is present listen to its unit died events, otherwise listen to main Factorio died events.
+    if remote.interfaces["biter_revive"] ~= nil then
+        local wontBeRevivedEventId = remote.call("biter_revive", "get_biter_wont_be_revived_event_id") --[[@as uint]]
+        Events.RegisterHandlerEvent(wontBeRevivedEventId--[[@as defines.events]] , "Reincarnation.OnBiterWontBeRevived", Reincarnation.OnBiterWontBeRevived)
+        local reviveFailedEventId = remote.call("biter_revive", "get_biter_revive_failed_event_id") --[[@as uint]]
+        Events.RegisterHandlerEvent(reviveFailedEventId--[[@as defines.events]] , "Reincarnation.OnBiterReviveFailed", Reincarnation.OnBiterReviveFailed)
+    else
+        Events.RegisterHandlerEvent(defines.events.on_entity_died, "Reincarnation.OnEntityDiedUnit", Reincarnation.OnEntityDiedUnit, { { filter = "type", type = "unit" } })
+    end
 end
 
 Reincarnation.OnStartup = function()
@@ -156,14 +183,54 @@ Reincarnation.ProcessReincarnationQueue = function()
     end
 end
 
---- Called when a unit type entity died.
+--- Called when a unit type entity died and the Biter Revive mod isn't present.
 ---@param event on_entity_died
 Reincarnation.OnEntityDiedUnit = function(event)
-    local entity = event.entity
+    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick)
+end
+
+--- Record a valid entity to the reincarnation queue if it happens to win the chance lottery.
+---@param entity LuaEntity
+---@param currentTick uint
+---@param entity_name string|nil # If known can provide, otherwise obtained from entity.
+---@param entity_force LuaForce|nil # If known can provide, otherwise obtained from entity.
+Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, currentTick, entity_name, entity_force)
     if not entity.has_flag("breaths-air") then
         return
     end
-    if UnitsIgnored[entity.name] then
+    if UnitsIgnored[entity_name or entity.name] then
+        return
+    end
+
+    local selectedReincarnationType = RandomChance.GetRandomEntryFromNormalisedDataSet(global.reincarnationChanceList, "chance")
+    if selectedReincarnationType == nil then
+        return
+    end
+    ---@type ReincarnationQueueEntry
+    local details = {
+        loggedTick = currentTick,
+        surface = entity.surface,
+        position = entity.position,
+        type = selectedReincarnationType.name,
+        orientation = entity.orientation
+    }
+    table.insert(global.reincarnationQueue, details)
+end
+
+--- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
+---@param event BiterWontBeRevived_Event
+Reincarnation.OnBiterWontBeRevived = function(event)
+    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.entityName, event.force)
+end
+
+--- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
+---@param event BiterRevivedFailed_Event
+Reincarnation.OnBiterReviveFailed = function(event)
+    local prototype = game.entity_prototypes[event.prototypeName]
+    if not prototype.has_flag("breaths-air") then
+        return
+    end
+    if UnitsIgnored[event.prototypeName] then
         return
     end
 
@@ -174,10 +241,10 @@ Reincarnation.OnEntityDiedUnit = function(event)
     ---@type ReincarnationQueueEntry
     local details = {
         loggedTick = event.tick,
-        surface = entity.surface,
-        position = entity.position,
+        surface = event.surface,
+        position = event.position,
         type = selectedReincarnationType.name,
-        orientation = entity.orientation
+        orientation = event.orientation
     }
     table.insert(global.reincarnationQueue, details)
 end

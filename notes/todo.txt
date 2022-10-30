@@ -1,1 +1,6 @@
 Add demo video to mod readme.
+Add mod options to reincarnate worms. This should be a worm set of the mod settings that control chances. Set defaults to be 0 for all.
+If chance settings are all off for a type (unit/worm) then don't need to react to any events for that type.
+Add mod settings to exclude entity force and entity type like Biter Revive has. Replaces the hard coded `UnitsIgnored` list.
+Remove "breathes air" flag requirement. Include `compilatron` as the default blacklist prototype name.
+Add option for unit to reincarnate as evo appropriate turret.
