@@ -18,7 +18,7 @@ data:extend(
             name = "biter_reincarnation-turn_to_tree_chance_percent",
             type = "int-setting",
             default_value = 90,
-            minomum_value = 0,
+            minimum_value = 0,
             maximum_value = 100,
             setting_type = "runtime-global",
             order = "1001"
