@@ -5,6 +5,8 @@ local BiomeTrees = require("utility.functions.biome-trees")
 local SharedData = require("shared-data")
 local RandomChance = require("utility.functions.random-chance")
 local EntityUtils = require("utility.helper-utils.entity-utils")
+local StringUtils = require("utility.helper-utils.string-utils")
+local LoggingUtils = require("utility.helper-utils.logging-utils")
 local Reincarnation = {}
 
 ---@class ReincarnationChanceEntry
@@ -16,31 +18,33 @@ local Reincarnation = {}
 ---@field surface LuaSurface
 ---@field position MapPosition
 ---@field type string
----@field orientation double
+---@field orientation RealOrientation
 
 ---@class BiterWontBeRevived_Event
 ---@field name uint # The event Id.
 ---@field tick uint
 ---@field mod_name string # The mod that raised the event (`biter_revive`).
 ---@field entity LuaEntity
+---@field unitNumber uint
 ---@field entityName string|nil # Will be populated if obtained at time event is raised.
 ---@field force LuaForce|nil # Will be populated if obtained at time event is raised.
+---@field forceIndex uint|nil # Will be populated if obtained at time event is raised.
 
 ---@class BiterRevivedFailed_Event
 ---@field name uint # The event Id.
 ---@field tick uint
 ---@field mod_name string # The mod that raised the event (`biter_revive`).
+---@field unitNumber uint
 ---@field prototypeName string
 ---@field surface LuaSurface
 ---@field position MapPosition
----@field orientation double
+---@field orientation RealOrientation
 ---@field force LuaForce
+---@field forceIndex uint
 
 local MaxQueueCyclesPerSecond = 60
 ---@enum ReincarnationType
 local ReincarnationType = { tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff" }
----@enum UnitsIgnored
-local UnitsIgnored = { compilatron = "compilatron" }
 ---@enum MovableEntityTypes
 local MovableEntityTypes = { unit = "unit", character = "character", car = "car", tank = "tank", ["spider-vehicle"] = "spider-vehicle" }
 
@@ -68,6 +72,28 @@ Reincarnation.OnStartup = function()
     if not EventScheduler.IsEventScheduledOnce("Reincarnation.ProcessReincarnationQueue", nil, nil) then
         EventScheduler.ScheduleEventOnce(6 + game.tick + global.reincarnationQueueProcessDelay--[[@as uint]] , "Reincarnation.ProcessReincarnationQueue", nil, nil)
     end
+
+    -- Special to print any startup setting error messages after tick 0. Only needed if its tick 0 now.
+    if game.tick == 0 then
+        script.on_nth_tick(
+            2,
+            function(event)
+                -- If its still tick 0 wait for later.
+                if event.tick == 0 then
+                    return
+                end
+
+                -- Print any errors and then remove them.
+                for _, errorMessage in pairs(global.zeroTickErrors) do
+                    LoggingUtils.LogPrintError(errorMessage)
+                end
+                global.zeroTickErrors = {}
+
+                -- Deregister this event as never needed again.
+                script.on_nth_tick(2, nil)
+            end
+        )
+    end
 end
 
 Reincarnation.CreateGlobals = function()
@@ -84,6 +110,12 @@ Reincarnation.CreateGlobals = function()
     global.reincarnationQueueCyclesPerSecond = global.reincarnationQueueCyclesPerSecond or 0 ---@type uint
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond or 0 ---@type uint
     global.maxTicksWaitForReincarnation = global.maxTicksWaitForReincarnation or 0 ---@type uint
+    global.blacklistedPrototypeNames = global.blacklistedPrototypeNames or {} ---@type table<string, true> @ The key is blacklisted prototype name, with a value of true.
+    global.raw_BlacklistedPrototypeNames = global.raw_BlacklistedPrototypeNames or "" ---@type string @ The last recorded raw setting value.
+    global.blacklistedForceIds = global.blacklistedForceIds or {} ---@type table<uint, true> @ The force Id as key, with the force name we match against the setting on as the value.
+    global.raw_BlacklistedForceNames = global.raw_BlacklistedForceNames or "" ---@type string @ The last recorded raw setting value.
+
+    global.zeroTickErrors = global.zeroTickErrors or {} ---@type string[] @ Any errors raised during map startup (0 tick). They will be printed again on first non 0 tick cycle biter check cycle.
 end
 
 --- Called when a runtime setting is updated.
@@ -93,6 +125,8 @@ Reincarnation.UpdateSetting = function(event)
     if event ~= nil then
         settingName = event.setting
     end
+    local settingErrorMessages = {} ---@type string[]
+    local settingErrorMessage ---@type string
 
     if settingName == "biter_reincarnation-turn_to_tree_chance_percent" or settingName == nil then
         global.rawTreeOnDeathChance = tonumber(settings.global["biter_reincarnation-turn_to_tree_chance_percent"].value) / 100
@@ -133,6 +167,67 @@ Reincarnation.UpdateSetting = function(event)
         { name = ReincarnationType.cliff, chance = global.rawCliffOnDeathChance }
     }
     RandomChance.NormaliseChanceList(global.reincarnationChanceList, "chance", true)
+
+    if event == nil or event.setting == "biter_reincarnation-blacklisted_prototype_names" then
+        local settingValue = settings.global["biter_reincarnation-blacklisted_prototype_names"].value --[[@as string]]
+
+        -- Check if the setting has changed before we bother to process it.
+        local changed = settingValue ~= global.raw_BlacklistedPrototypeNames
+        global.raw_BlacklistedPrototypeNames = settingValue
+
+        -- Only check and update if the setting value was actually changed from before.
+        if changed then
+            global.blacklistedPrototypeNames = StringUtils.SplitStringOnCharactersToDictionary(settingValue, ",")
+
+            -- Check each prototype name is valid and tell the player about any that aren't. Don't block the update though as it does no harm.
+            local count = 1
+            for name in pairs(global.blacklistedPrototypeNames) do
+                local prototype = game.entity_prototypes[name]
+                if prototype == nil then
+                    settingErrorMessage = "Biter Reincarnation - unrecognised prototype name `" .. name .. "` in blacklisted prototype names."
+                    LoggingUtils.LogPrintError(settingErrorMessage)
+                    settingErrorMessages[#settingErrorMessages + 1] = settingErrorMessage
+                elseif prototype.type ~= "unit" then
+                    settingErrorMessage = "Biter Reincarnation - prototype name `" .. name .. "` in blacklisted prototype names isn't of type `unit` and so could never be reincarnated anyways."
+                    LoggingUtils.LogPrintError(settingErrorMessage)
+                    settingErrorMessages[#settingErrorMessages + 1] = settingErrorMessage
+                end
+                count = count + 1
+            end
+        end
+    end
+    if event == nil or event.setting == "biter_reincarnation-blacklisted_force_names" then
+        local settingValue = settings.global["biter_reincarnation-blacklisted_force_names"].value --[[@as string]]
+
+        -- Check if the setting has changed before we bother to process it.
+        local changed = settingValue ~= global.raw_BlacklistedForceNames
+        global.raw_BlacklistedForceNames = settingValue
+
+        -- Only check and update if the setting value was actually changed from before.
+        if changed then
+            local forceNames = StringUtils.SplitStringOnCharactersToDictionary(settingValue, ",")
+
+            -- Blank the global before adding the new ones every time.
+            global.blacklistedForceIds = {}
+
+            -- Only add valid force Id's to the global.
+            for forceName in pairs(forceNames) do
+                local force = game.forces[forceName] --[[@as LuaForce]]
+                if force ~= nil then
+                    global.blacklistedForceIds[force.index] = true
+                else
+                    settingErrorMessage = "Biter Reincarnation - Invalid force name provided: " .. forceName
+                    LoggingUtils.LogPrintError(settingErrorMessage)
+                    settingErrorMessages[#settingErrorMessages + 1] = settingErrorMessage
+                end
+            end
+        end
+    end
+
+    -- If its 0 tick (initial map start and there were errors add them to be written out after a few ticks)
+    if game.tick == 0 and #settingErrorMessages > 0 then
+        global.zeroTickErrors = settingErrorMessages
+    end
 end
 
 --- Process the reincarnation queue.
@@ -194,11 +289,18 @@ end
 ---@param currentTick uint
 ---@param entity_name string|nil # If known can provide, otherwise obtained from entity.
 ---@param entity_force LuaForce|nil # If known can provide, otherwise obtained from entity.
-Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, currentTick, entity_name, entity_force)
-    if not entity.has_flag("breaths-air") then
+---@param entity_force_index uint|nil # If known can provide, otherwise obtained from entity.
+Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, currentTick, entity_name, entity_force, entity_force_index)
+    entity_name = entity_name or entity.name
+    -- Check if the prototype name is blacklisted.
+    if global.blacklistedPrototypeNames[entity_name] ~= nil then
         return
     end
-    if UnitsIgnored[entity_name or entity.name] then
+
+    entity_force = entity_force or entity.force --[[@as LuaForce]]
+    entity_force_index = entity_force_index or entity_force.index
+    -- Check if the force is blacklisted.
+    if global.blacklistedForceIds[entity_force_index] ~= nil then
         return
     end
 
@@ -214,23 +316,25 @@ Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, curre
         type = selectedReincarnationType.name,
         orientation = entity.orientation
     }
-    table.insert(global.reincarnationQueue, details)
+    global.reincarnationQueue[#global.reincarnationQueue + 1] = details
 end
 
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterWontBeRevived_Event
 Reincarnation.OnBiterWontBeRevived = function(event)
-    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.entityName, event.force)
+    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.entityName, event.force, event.forceIndex)
 end
 
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterRevivedFailed_Event
 Reincarnation.OnBiterReviveFailed = function(event)
-    local prototype = game.entity_prototypes[event.prototypeName]
-    if not prototype.has_flag("breaths-air") then
+    -- Check if the prototype name is blacklisted.
+    if global.blacklistedPrototypeNames[event.prototypeName] ~= nil then
         return
     end
-    if UnitsIgnored[event.prototypeName] then
+
+    -- Check if the force is blacklisted.
+    if global.blacklistedForceIds[event.forceIndex] ~= nil then
         return
     end
 
@@ -246,7 +350,7 @@ Reincarnation.OnBiterReviveFailed = function(event)
         type = selectedReincarnationType.name,
         orientation = event.orientation
     }
-    table.insert(global.reincarnationQueue, details)
+    global.reincarnationQueue[#global.reincarnationQueue + 1] = details
 end
 
 --- Add a fire for a tree at a given position.

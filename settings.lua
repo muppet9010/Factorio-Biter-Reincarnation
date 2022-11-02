@@ -72,6 +72,22 @@ data:extend(
             minimum_value = 1,
             setting_type = "runtime-global",
             order = "1202"
+        },
+        {
+            name = "biter_reincarnation-blacklisted_prototype_names",
+            type = "string-setting",
+            allow_blank = true,
+            default_value = "compilatron",
+            setting_type = "runtime-global",
+            order = "2000"
+        },
+        {
+            name = "biter_reincarnation-blacklisted_force_names",
+            type = "string-setting",
+            allow_blank = true,
+            default_value = "",
+            setting_type = "runtime-global",
+            order = "2001"
         }
     }
 )
