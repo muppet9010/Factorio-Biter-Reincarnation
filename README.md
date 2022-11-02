@@ -2,6 +2,9 @@
 
 When an enemy unit dies it tries to reincarnate back in to nature, be it a tree, rock or cliff. Occasionally the angry ones can burst into a flaming tree.
 
+![Biter Reincarnation Example](https://giant.gfycat.com/WeeklyReasonableGuineapig.mp4)
+
+
 
 
 Reincarnation Types
@@ -14,6 +17,7 @@ Reincarnation Types
 
 
 
+
 Mod Behavior
 ===============
 
@@ -22,6 +26,7 @@ Mod Behavior
 - When biters die they join a reincarnation queue. The processing speed of the queue is controllable by mod settings so you can limit the impact of UPS drops.
 - Mod setting to control if large reincarnations will try and push anything movable out of the way (up to 2 tiles). Anything not moved will be crushed. Movable things include units, player characters and vehicles.
 - Mod setting to control tree fire spread to aid compatibility with other mods and very high tree maps.
+
 
 
 

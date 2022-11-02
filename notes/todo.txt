@@ -1,7 +1,7 @@
 TODO
 ----
 
-    - Add demo video to mod readme.
+    - profile iterating global.reincarnationQueue as it seems very inefficient when lots of biters are queued for reincarnation. As we both reshuffle all the entries in the table when removing one.
 
 
 
