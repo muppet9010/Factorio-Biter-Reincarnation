@@ -4,10 +4,11 @@ Date: 2022-11-xxx
   Features:
     - This mod now integrates with the Biter Revive mod, so that a dead biter doesn't trigger both mods. Biter Revive takes priority, with a non revived biter be available to reincarnate.
     - Added mod setting to blacklist (exclude) named entity types from reincarnating.
-    - Added mod setting to blacklist (exclude) entities on specific forces from reincarnating.
+    - Added mod setting to blacklist (exclude) entities on specific forces from reincarnating. Defaults to excluding the `player` force.
   Changes:
     - Don't exclude all units that don't have the `breaths-air` flag on them. Had no real impact for base game units and the new blacklist mod settings allow this to be covered if needed with mods, but in a much more flexible way.
   Bugfixes:
+    - Fix that if large entity push option was disabled things weren't actually crushed.
   Info:
 ---------------------------------------------------------------------------------------------------
 Version: 20.0.20

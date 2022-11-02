@@ -26,6 +26,7 @@ local Reincarnation = {}
 ---@field mod_name string # The mod that raised the event (`biter_revive`).
 ---@field entity LuaEntity
 ---@field unitNumber uint
+---@field reviveType ReviveTypes
 ---@field entityName string|nil # Will be populated if obtained at time event is raised.
 ---@field force LuaForce|nil # Will be populated if obtained at time event is raised.
 ---@field forceIndex uint|nil # Will be populated if obtained at time event is raised.
@@ -35,12 +36,15 @@ local Reincarnation = {}
 ---@field tick uint
 ---@field mod_name string # The mod that raised the event (`biter_revive`).
 ---@field unitNumber uint
+---@field reviveType ReviveTypes
 ---@field prototypeName string
 ---@field surface LuaSurface
 ---@field position MapPosition
 ---@field orientation RealOrientation
 ---@field force LuaForce
 ---@field forceIndex uint
+
+---@alias ReviveTypes "unit"|"turret"
 
 local MaxQueueCyclesPerSecond = 60
 ---@enum ReincarnationType
@@ -322,12 +326,15 @@ end
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterWontBeRevived_Event
 Reincarnation.OnBiterWontBeRevived = function(event)
+    if event.reviveType ~= "unit" then return end
     Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.entityName, event.force, event.forceIndex)
 end
 
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterRevivedFailed_Event
 Reincarnation.OnBiterReviveFailed = function(event)
+    if event.reviveType ~= "unit" then return end
+
     -- Check if the prototype name is blacklisted.
     if global.blacklistedPrototypeNames[event.prototypeName] ~= nil then
         return
@@ -395,8 +402,8 @@ end
 ---@param createdEntity LuaEntity
 Reincarnation.DisplaceEntitiesInBoundingBox = function(surface, createdEntity)
     for _, entity in pairs(EntityUtils.ReturnAllObjectsInArea(surface, createdEntity.bounding_box, true, nil, true, true, { createdEntity })) do
-        local entityMoved = false
         if global.largeReincarnationsPush then
+            local entityMoved = false
             if MovableEntityTypes[entity.type] ~= nil then
                 local entityNewPosition = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.1)
                 if entityNewPosition ~= nil then
@@ -407,6 +414,8 @@ Reincarnation.DisplaceEntitiesInBoundingBox = function(surface, createdEntity)
             if not entityMoved then
                 entity.die("neutral", createdEntity)
             end
+        else
+            entity.die("neutral", createdEntity)
         end
     end
 end
