@@ -57,6 +57,8 @@ local DebugLogging = false
 Reincarnation.OnLoad = function()
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
     EventScheduler.RegisterScheduledEventType("Reincarnation.ProcessReincarnationQueue", Reincarnation.ProcessReincarnationQueue)
+    script.on_event(defines.events.on_surface_deleted, Reincarnation.OnSurfaceRemoved)
+    script.on_event(defines.events.on_surface_cleared, Reincarnation.OnSurfaceRemoved)
 
     -- If Biter Revive mod is present listen to its unit died events, otherwise listen to main Factorio died events.
     if remote.interfaces["biter_revive"] ~= nil then
@@ -235,8 +237,9 @@ Reincarnation.UpdateSetting = function(event)
 end
 
 --- Process the reincarnation queue.
-Reincarnation.ProcessReincarnationQueue = function()
-    EventScheduler.ScheduleEventOnce(game.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
+---@param event UtilityScheduledEvent_CallbackObject
+Reincarnation.ProcessReincarnationQueue = function(event)
+    EventScheduler.ScheduleEventOnce(event.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
     if DebugLogging then Logging.ModLog("", false) end
 
     local doneThisCycle = 0
@@ -253,28 +256,29 @@ Reincarnation.ProcessReincarnationQueue = function()
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
     for k, details in pairs(global.reincarnationQueue) do
         table.remove(global.reincarnationQueue, k)
-        if details.loggedTick + global.maxTicksWaitForReincarnation >= game.tick then
+        if details.loggedTick + global.maxTicksWaitForReincarnation >= event.tick then
             local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
-            if surface ~= nil and surface.valid then
-                if type == ReincarnationType.tree then
-                    BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-                elseif type == ReincarnationType.burningTree then
-                    local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-                    if createdTree ~= nil then
-                        targetPosition = createdTree.position
-                    end
-                    Reincarnation.AddTreeFireToPosition(surface, targetPosition)
-                elseif type == ReincarnationType.rock then
-                    Reincarnation.AddRockNearPosition(surface, targetPosition)
-                elseif type == ReincarnationType.cliff then
-                    Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
-                else
-                    error("unsupported type: " .. type)
+            if type == ReincarnationType.tree then
+                BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+            elseif type == ReincarnationType.burningTree then
+                local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+                if createdTree ~= nil then
+                    targetPosition = createdTree.position
                 end
-                doneThisCycle = doneThisCycle + 1
-                global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
-                if DebugLogging then Logging.ModLog("1 reincarnation done", false) end
+                Reincarnation.AddTreeFireToPosition(surface, targetPosition)
+            elseif type == ReincarnationType.rock then
+                Reincarnation.AddRockNearPosition(surface, targetPosition)
+            elseif type == ReincarnationType.cliff then
+                Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
+            else
+                error("unsupported type: " .. type)
             end
+            doneThisCycle = doneThisCycle + 1
+            global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
+            if DebugLogging then Logging.ModLog("1 reincarnation done", false) end
+        else
+            -- Reached queued reincarnations that are set in the future.
+            return
         end
         if doneThisCycle >= tasksThisCycle then
             return
@@ -500,6 +504,17 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
 
     Reincarnation.DisplaceEntitiesInBoundingBox(surface, cliffEntityLeft)
     Reincarnation.DisplaceEntitiesInBoundingBox(surface, cliffEntityRight)
+end
+
+--- Called when a surface is removed or cleared and we need to remove any scheduled reincarnations on that surface and other cached data.
+---@param event on_surface_cleared|on_surface_deleted
+Reincarnation.OnSurfaceRemoved = function(event)
+    -- Just empty the reincarnationQueue of any entries for that surface.
+    for i, reincarnationDetails in pairs(global.reincarnationQueue) do
+        if not reincarnationDetails.surface.valid or reincarnationDetails.surface.index == event.surface_index then
+            table.remove(global.reincarnationQueue, i)
+        end
+    end
 end
 
 return Reincarnation
