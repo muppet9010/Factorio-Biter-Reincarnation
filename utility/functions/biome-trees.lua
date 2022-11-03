@@ -24,7 +24,7 @@ local BiomeTrees = {} ---@class Utility_BiomeTrees
 local LogNonPositives = false
 local LogPositives = false
 local LogData = false
-local LogTags = false -- @Enable with other logging options to include details about tag checking.
+local LogTags = false -- Enable with other logging options to include details about tag checking.
 
 ---@class UtilityBiomeTrees_EnvironmentData
 ---@field moistureRangeAttributeNames UtilityBiomeTrees_MoistureRangeAttributeNames
@@ -39,9 +39,9 @@ local LogTags = false -- @Enable with other logging options to include details a
 ---@field range string
 
 ---@class UtilityBiomeTrees_TileTemperatureCalculationSettings
----@field scaleMultiplier? double|nil
----@field min? double|nil
----@field max? double|nil
+---@field scaleMultiplier? double
+---@field min? double
+---@field max? double
 
 ---@alias UtilityBiomeTrees_TreesMetaData table<string, UtilityBiomeTrees_TreeMetaData> # Key'd by tree name.
 ---@class UtilityBiomeTrees_TreeMetaData
@@ -55,13 +55,13 @@ local LogTags = false -- @Enable with other logging options to include details a
 ---@field type UtilityBiomeTrees_TileType
 ---@field tempRanges UtilityBiomeTrees_valueRange[]
 ---@field moistureRanges UtilityBiomeTrees_valueRange[]
----@field tag string|nil
+---@field tag? string
 
 ---@class UtilityBiomeTrees_RawTileData
 ---@field [1] UtilityBiomeTrees_TileType
----@field [2] UtilityBiomeTrees_valueRange[]|nil # tempRanges
----@field [3] UtilityBiomeTrees_valueRange[]|nil # moistureRanges
----@field [4] string|nil # tag
+---@field [2]? UtilityBiomeTrees_valueRange[] # tempRanges
+---@field [3]? UtilityBiomeTrees_valueRange[] # moistureRanges
+---@field [4]? string # tag
 
 ---@class UtilityBiomeTrees_valueRange
 ---@field [1] double # Min in this range.
@@ -72,20 +72,15 @@ local LogTags = false -- @Enable with other logging options to include details a
 ---@field tempRange UtilityBiomeTrees_valueRange
 ---@field moistureRange UtilityBiomeTrees_valueRange
 ---@field probability double
----@field tags table<string, string>|nil # Tag color string as key and value.
----@field exclusivelyOnNamedTiles table<string, string>|nil # The names of tiles that the tree can only go on, tile name is the key and value in table.
+---@field tags? table<string, string> # Tag color string as key and value.
+---@field exclusivelyOnNamedTiles? table<string, string> # The names of tiles that the tree can only go on, tile name is the key and value in table.
 
 ---@class UtilityBiomeTrees_suitableTree
 ---@field chanceStart double
 ---@field chanceEnd double
 ---@field tree UtilityBiomeTrees_TreeDetails
 
----@enum UtilityBiomeTrees_TileType
-local TileType = {
-    ["allow-trees"] = "allow-trees",
-    ["water"] = "water",
-    ["no-trees"] = "no-trees"
-}
+---@alias UtilityBiomeTrees_TileType "allow-trees"|"water"|"no-trees"
 
 ----------------------------------------------------------------------------------
 --                          PUBLIC FUNCTIONS
@@ -110,7 +105,7 @@ end
 ---@return string|nil treeName
 BiomeTrees.GetBiomeTreeName = function(surface, position)
     -- Returns the tree name or nil if tile isn't land type
-    local tile = surface.get_tile(position.x--[[@as int]] , position.y--[[@as int]] )
+    local tile = surface.get_tile(position--[[@as TilePosition # handled equally by Factorio in this API function.]] )
     local tileData = global.UTILITYBIOMETREES.tileData[tile.name]
     if tileData == nil then
         local tileName = tile.hidden_tile
@@ -122,7 +117,7 @@ BiomeTrees.GetBiomeTreeName = function(surface, position)
             return BiomeTrees.GetRandomTreeLastResort(tile)
         end
     end
-    if tileData.type ~= TileType["allow-trees"] then
+    if tileData.type ~= "allow-trees" then
         return nil
     end
 
@@ -228,7 +223,7 @@ end
 ---@param tileMoisture double
 ---@return UtilityBiomeTrees_suitableTree[]
 BiomeTrees._SearchForSuitableTrees = function(tileData, tileTemp, tileMoisture)
-    local suitableTrees = {}
+    local suitableTrees = {} ---@type UtilityBiomeTrees_suitableTree[]
     local currentChance = 0
     -- Try to ensure we find a tree vaguely accurate. Start as accurate as possible and then become less precise.
     for accuracy = 1, 1.5, 0.1 do
@@ -265,7 +260,7 @@ BiomeTrees._SearchForSuitableTrees = function(tileData, tileTemp, tileMoisture)
                         chanceEnd = currentChance + tree.probability,
                         tree = tree
                     }
-                    table.insert(suitableTrees, treeEntry)
+                    suitableTrees[#suitableTrees + 1] = treeEntry
                     currentChance = treeEntry.chanceEnd
                 end
             end
@@ -327,7 +322,7 @@ end
 --- Gets the runtime tree data from the prototype data.
 ---@return UtilityBiomeTrees_TreeDetails[]
 BiomeTrees._GetTreeData = function()
-    local treeDataArray = {}
+    local treeDataArray = {} ---@type UtilityBiomeTrees_TreeDetails[]
     local treeData
     local environmentData = global.UTILITYBIOMETREES.environmentData
     local moistureRangeAttributeNames = global.UTILITYBIOMETREES.environmentData.moistureRangeAttributeNames
@@ -364,7 +359,7 @@ BiomeTrees._GetTreeData = function()
                 treeData.tags = environmentData.treesMetaData[prototype.name][1]
                 treeData.exclusivelyOnNamedTiles = environmentData.treesMetaData[prototype.name][2]
             end
-            table.insert(treeDataArray, treeData)
+            treeDataArray[#treeDataArray + 1] = treeData
         end
     end
 
@@ -375,19 +370,19 @@ end
 ---@param tileDetails UtilityBiomeTrees_TilesDetails
 ---@param tileName string
 ---@param type UtilityBiomeTrees_TileType
----@param range1? UtilityBiomeTrees_valueRange[]|nil
----@param range2? UtilityBiomeTrees_valueRange[]|nil
----@param tag? string|nil
+---@param range1? UtilityBiomeTrees_valueRange[]
+---@param range2? UtilityBiomeTrees_valueRange[]
+---@param tag? string
 BiomeTrees._AddTileDetails = function(tileDetails, tileName, type, range1, range2, tag)
-    local tempRanges = {}
-    local moistureRanges = {}
+    local tempRanges = {} ---@type UtilityBiomeTrees_valueRange[]
+    local moistureRanges = {} ---@type UtilityBiomeTrees_valueRange[]
     if range1 ~= nil then
-        table.insert(tempRanges, { range1[1][1] or 0, range1[2][1] or 0 })
-        table.insert(moistureRanges, { range1[1][2] or 0, range1[2][2] or 0 })
+        tempRanges[#tempRanges + 1] = { range1[1][1] or 0, range1[2][1] or 0 }
+        moistureRanges[#moistureRanges + 1] = { range1[1][2] or 0, range1[2][2] or 0 }
     end
     if range2 ~= nil then
-        table.insert(tempRanges, { range2[1][1] or 0, range2[2][1] or 0 })
-        table.insert(moistureRanges, { range2[1][2] or 0, range2[2][2] or 0 })
+        tempRanges[#tempRanges + 1] = { range2[1][1] or 0, range2[2][1] or 0 }
+        moistureRanges[#moistureRanges + 1] = { range2[1][2] or 0, range2[2][2] or 0 }
     end
     tileDetails[tileName] = { name = tileName, type = type, tempRanges = tempRanges, moistureRanges = moistureRanges, tag = tag } ---@type UtilityBiomeTrees_TileDetails
 end
