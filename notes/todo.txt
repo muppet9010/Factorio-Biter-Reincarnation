@@ -1,14 +1,14 @@
 TODO
 ----
 
-    - Hotfix the BiomeTrees._SearchForSuitableTrees() in this version as it will be the biggest UPS savings right now. TODO in friendly robot mod for this already.
     - Profile iterating global.reincarnationQueue as it seems very inefficient when lots of biters are queued for reincarnation. As we reshuffle all the entries in the table when removing one. Also seem written as if the entries might be out of tick order, but I don't think the code allows them to be added that way. Do an extreme edge case scenario of nuking a lot of biters at once. I suspect a lot of the looping isn't needed. What matters is within the FOR loop as this will scale and bunch based on simultaneous revives. The stuff that runs once every cycle is spread out background mod cost.
     - Handle custom rock types if alien biomes adds any ?
+    - try using shallow water to see if suitable for reincarnating worms.
 
 
 
 FUTURE IDEAS
 ------------
 
-    - Add mod options to reincarnate worms. This should be a worm set of the mod settings that control chances. Set defaults to be 0 for all.
+    - Add mod options to reincarnate worms. This should be a worm set of the mod settings that control chances. Set defaults to be 0 for all. Don't include tree as that would just be odd.
     - If chance settings are all off for a type (unit/worm) then don't need to react to any events for that type.

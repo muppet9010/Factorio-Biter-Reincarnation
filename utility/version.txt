@@ -1,3 +1,10 @@
 20.11.44
 
 Created by Muppet9010: https://github.com/muppet9010/Factorio-Utils
+
+
+HOTFIXES
+========
+
+- utility\functions\biome-trees.lua - BiomeTrees.AddBiomeTreeNearPosition() - returns treeName and the position it was placed
+- utility\functions\biome-trees.lua - BiomeTrees._SearchForSuitableTrees() to BiomeTrees._GetTreePossibilitiesForTileData - streamlined to be more efficient by running once to cover the whole tile spectrum and then caching the results.

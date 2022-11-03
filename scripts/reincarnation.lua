@@ -256,16 +256,16 @@ Reincarnation.ProcessReincarnationQueue = function(event)
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
     for k, details in pairs(global.reincarnationQueue) do
         table.remove(global.reincarnationQueue, k)
+        -- If the revive is new enough then do it. Otherwise we just discard it and continue as we need to catch up to current ones.
         if details.loggedTick + global.maxTicksWaitForReincarnation >= event.tick then
             local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
             if type == ReincarnationType.tree then
                 BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
             elseif type == ReincarnationType.burningTree then
-                local createdTree = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-                if createdTree ~= nil then
-                    targetPosition = createdTree.position
+                local _, treePosition = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+                if treePosition ~= nil then
+                    Reincarnation.AddTreeFireToPosition(surface, treePosition)
                 end
-                Reincarnation.AddTreeFireToPosition(surface, targetPosition)
             elseif type == ReincarnationType.rock then
                 Reincarnation.AddRockNearPosition(surface, targetPosition)
             elseif type == ReincarnationType.cliff then
@@ -276,12 +276,10 @@ Reincarnation.ProcessReincarnationQueue = function(event)
             doneThisCycle = doneThisCycle + 1
             global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
             if DebugLogging then Logging.ModLog("1 reincarnation done", false) end
-        else
-            -- Reached queued reincarnations that are set in the future.
-            return
-        end
-        if doneThisCycle >= tasksThisCycle then
-            return
+
+            if doneThisCycle >= tasksThisCycle then
+                return
+            end
         end
     end
 end
