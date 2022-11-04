@@ -10,7 +10,7 @@
 
 --[[
     CODE NOTES:
-        - Some of these objects aren't terribly well typed or even named fields. This is a legacy code and doesn't really ever get touched so left as minimal typing for time being.
+        - Some of these objects aren't typed by field name, but instead indexed field number. This is based on how the code has been copied from the base Factorio game file. As its been copied and not queried by code adding names to the fields would be a manual process for every one. This same policy has been applied to the alien biomes data that's extracted from their files by a programmatic values dump.
         - Don't use `surface.calculate_tile_properties()` as its output numbers for moisture and temperature/aux (not sure which one to use) don't seem to correspond to the tree data we get. Maybe with a full re-write to get compatible numbers it could work, or it may need noise manipulation scripts run against them in some fashion... Left using the old method intentionally as it seems to give solid results.
 ]]
 
@@ -260,7 +260,7 @@ BiomeTrees._GetTreePossibilitiesForTileData = function(tileData)
                             include = true
                         end
                     else
-                        -- No exclusive tile restrictions so check tags. Mods either have no tile tags or they have tile and possibly tree tags, so not all combination of tags need to be accounted for.
+                        -- No exclusive tile restrictions so check tags. Mods either have no tile tags (base Factorio) or they have tile and possibly tree tags (alien biomes), so not all combination of tags need to be accounted for.
                         if tileData.tags == nil then
                             -- No tile restriction tag so can just include.
                             include = true

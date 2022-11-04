@@ -6,5 +6,6 @@ Created by Muppet9010: https://github.com/muppet9010/Factorio-Utils
 HOTFIXES
 ========
 
-- utility\functions\biome-trees.lua - BiomeTrees.AddBiomeTreeNearPosition() - returns treeName and the position it was placed
-- utility\functions\biome-trees.lua - BiomeTrees._SearchForSuitableTrees() to BiomeTrees._GetTreePossibilitiesForTileData - streamlined to be more efficient by running once to cover the whole tile spectrum and then caching the results.
+- utility\functions\biome-trees.lua - BiomeTrees.AddBiomeTreeNearPosition() - returns treeName and the position it was placed - Added to Utility 20.12.45.
+- utility\functions\biome-trees.lua - odd changes throughout file to streamline to be more efficient by running once to cover the whole tile spectrum and then caching the results. Shouldn't have any impact on usage of the library. - Added to Utility 20.12.45.
+- utility\functions\biome-trees-data\alien-biomes.lua - updated for current alien biomes version. - Added to Utility 20.12.45.
