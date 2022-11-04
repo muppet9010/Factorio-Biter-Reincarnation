@@ -5,9 +5,10 @@ Date: 2022-11-xxx
     - This mod now integrates with the Biter Revive mod, so that a dead biter doesn't trigger both mods. Biter Revive takes priority, with a non revived biter be available to reincarnate.
     - Added mod setting to blacklist (exclude) named entity types from reincarnating.
     - Added mod setting to blacklist (exclude) entities on specific forces from reincarnating. Defaults to excluding the `player` force.
+    - Mod is much more UPS efficient, especially in the creation of trees.
   Changes:
     - Don't exclude all units that don't have the `breaths-air` flag on them. Had no real impact for base game units and the new blacklist mod settings allow this to be covered if needed with mods, but in a much more flexible way.
-    - Increased max reincarnations per second mod setting to a default of 100. Old value was 10 and was left over from less efficient code. This will also change a save game's mod setting on mod update if the saves value was the old default.
+    - Increased max reincarnations per second mod setting to a default of 50. Old value was 10 as old code was less UPS efficient. This will also change a save game's mod setting on mod update if the saves value was the old default. Can't update a Factorio instances (not save game) mod settings however.
   Bugfixes:
     - Fix that if large entity push option was disabled things weren't actually crushed.
   Info:

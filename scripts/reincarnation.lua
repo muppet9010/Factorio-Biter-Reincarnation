@@ -239,7 +239,7 @@ end
 --- Process the reincarnation queue.
 ---@param event UtilityScheduledEvent_CallbackObject
 Reincarnation.ProcessReincarnationQueue = function(event)
-    EventScheduler.ScheduleEventOnce(event.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
+    EventScheduler.ScheduleEventOnce(event.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil) -- TODO: This is very costly.
     if DebugLogging then Logging.ModLog("", false) end
 
     local doneThisCycle = 0
@@ -255,7 +255,7 @@ Reincarnation.ProcessReincarnationQueue = function(event)
     end
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
     for k, details in pairs(global.reincarnationQueue) do
-        table.remove(global.reincarnationQueue, k)
+        table.remove(global.reincarnationQueue, k) -- TODO: huge
         -- If the revive is new enough then do it. Otherwise we just discard it and continue as we need to catch up to current ones.
         if details.loggedTick + global.maxTicksWaitForReincarnation >= event.tick then
             local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
