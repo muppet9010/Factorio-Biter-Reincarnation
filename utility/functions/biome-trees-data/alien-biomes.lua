@@ -2930,6 +2930,9 @@ Data.GetTreesMetaData = function()
     }
 end
 
+--[[
+This is manually curated from looking at the raw data of tile and trees.
+]]
 Data.GetTileTagToTreeColors = function()
     --[[local tagsToColors = {
         purple = {violet = "violet", purple= "purple", red = "red"},

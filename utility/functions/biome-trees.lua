@@ -61,7 +61,8 @@ local LogTags = false -- Enable with other logging options to include details ab
 ---@field type UtilityBiomeTrees_TileType
 ---@field tempRanges UtilityBiomeTrees_valueRange[]
 ---@field moistureRanges UtilityBiomeTrees_valueRange[]
----@field tag? string
+---@field rawTag? string # The raw string tag from alien biomes.
+---@field tags? table<string, string> # Tag color strings as key and value.
 
 ---@class UtilityBiomeTrees_RawTileData
 ---@field [1] UtilityBiomeTrees_TileType
@@ -78,7 +79,7 @@ local LogTags = false -- Enable with other logging options to include details ab
 ---@field tempRange UtilityBiomeTrees_valueRange
 ---@field moistureRange UtilityBiomeTrees_valueRange
 ---@field probability double
----@field tags? table<string, string> # Tag color string as key and value.
+---@field tags? table<string, string> # Tag color strings as key and value.
 ---@field exclusivelyOnNamedTiles? table<string, string> # The names of tiles that the tree can only go on, tile name is the key and value in table.
 
 ---@class UtilityBiomeTrees_suitableTrees
@@ -259,15 +260,20 @@ BiomeTrees._GetTreePossibilitiesForTileData = function(tileData)
                             include = true
                         end
                     else
-                        -- No exclusive tile restrictions so check tags.
-                        if tileData.tag == nil then
+                        -- No exclusive tile restrictions so check tags. Mods either have no tile tags or they have tile and possibly tree tags, so not all combination of tags need to be accounted for.
+                        if tileData.tags == nil then
                             -- No tile restriction tag so can just include.
                             include = true
                         elseif tree.tags ~= nil then
-                            -- There are tree restriction tags that need checking.
-                            if tree.tags[tileData.tag] then
-                                if LogTags then LoggingUtils.ModLog("tile tag: " .. tileData.tag .. "  --- tree tags: " .. TableUtils.TableKeyToCommaString(tree.tags), false) end
-                                include = true
+                            -- There are tree restriction tags that need checking against the tile data tags.
+                            -- CODE NOTE: there are less tags on tiles athan trees when both are present, so loop over each tile tag.
+                            for tileDataTag in pairs(tileData.tags) do
+                                if LogTags then LoggingUtils.ModLog("check tile tag: " .. tileDataTag, false) end
+                                if tree.tags[tileDataTag] ~= nil then
+                                    if LogTags then LoggingUtils.ModLog("tree name:: " .. tree.name .. "  --- matching tree tags: " .. TableUtils.TableKeyToCommaString(tree.tags), false) end
+                                    include = true
+                                    break
+                                end
                             end
                         end
                     end
@@ -332,13 +338,13 @@ BiomeTrees._GetEnvironmentData = function()
             min = -15
         }
         environmentData.tileData = BiomeTrees._ProcessTilesRawData(AlienBiomesData.GetTileData())
-        local tagToColors = AlienBiomesData.GetTileTagToTreeColors()
+        local tagToColors = AlienBiomesData.GetTileTagToTreeColors() --[[@as table<string,table<string,string>>]]
         for _, tile in pairs(environmentData.tileData) do
-            if tile.tag ~= nil then
-                if tagToColors[tile.tag] then
-                    tile.tag = tagToColors[tile.tag]
+            if tile.rawTag ~= nil then
+                if tagToColors[tile.rawTag] then
+                    tile.tags = tagToColors[tile.rawTag]
                 else
-                    LoggingUtils.LogPrintError("Failed to find tile to tree color mapping for tile tag: ' " .. tile.tag .. "'", LogSuitablePositives or LogSuitableNonPositives)
+                    LoggingUtils.LogPrintError("Failed to find tile to tree color mapping for tile rawTag: ' " .. tile.rawTag .. "'", LogSuitablePositives or LogSuitableNonPositives)
                 end
             end
         end
@@ -412,8 +418,8 @@ end
 ---@param type UtilityBiomeTrees_TileType
 ---@param range1? UtilityBiomeTrees_valueRange[]
 ---@param range2? UtilityBiomeTrees_valueRange[]
----@param tag? string
-BiomeTrees._AddTileDetails = function(tileDetails, tileName, type, range1, range2, tag)
+---@param rawTag? string
+BiomeTrees._AddTileDetails = function(tileDetails, tileName, type, range1, range2, rawTag)
     local tempRanges = {} ---@type UtilityBiomeTrees_valueRange[]
     local moistureRanges = {} ---@type UtilityBiomeTrees_valueRange[]
     if range1 ~= nil then
@@ -424,7 +430,9 @@ BiomeTrees._AddTileDetails = function(tileDetails, tileName, type, range1, range
         tempRanges[#tempRanges + 1] = { range2[1][1] or 0, range2[2][1] or 0 }
         moistureRanges[#moistureRanges + 1] = { range2[1][2] or 0, range2[2][2] or 0 }
     end
-    tileDetails[tileName] = { name = tileName, type = type, tempRanges = tempRanges, moistureRanges = moistureRanges, tag = tag } ---@type UtilityBiomeTrees_TileDetails
+
+    ---@type UtilityBiomeTrees_TileDetails
+    tileDetails[tileName] = { name = tileName, type = type, tempRanges = tempRanges, moistureRanges = moistureRanges, rawTag = rawTag }
 end
 
 --- Processes raw tile data in to a tiles details table.
