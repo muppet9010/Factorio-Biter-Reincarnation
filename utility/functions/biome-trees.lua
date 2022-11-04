@@ -1,18 +1,24 @@
 --[[
-    Used to get tile (biome) appropriate trees, rather than just select any old tree. Means they will generally fit in to the map better, although vanilla forest types don't always fully match the biome they are in.
+    Used to get tile (biome) appropriate trees, rather than just select any old tree. Means they will generally fit in to the map better, although forest tree types don't always fully match the biome they are in.
     Will only nicely handle vanilla and Alien Biomes tiles and trees, modded tiles will get a random tree if they are a land-ish type tile.
     Usage:
         - Require the file at usage locations.
         - Call the BiomeTrees.OnStartup() for script.on_init and script.on_configuration_changed. This will load the meta tables of the mod fresh from the current tiles and trees. This is needed as on large mods it may take a few moments and we don't want to lag the game on first usage.
         - Call the desired public functions when needed. These are the ones at the top of the file without an "_" at the start of the function name.
     Supports specifically coded modded trees with meta data. If a tree has tile restrictions this is used for selection after temp and moisture, otherwise the tags of tile and tree are checked. This logic comes from supporting alien biomes.
-    Only utilises tree's that have autoplace attributes. As otherwise we don't know their moisture and temperature requirements.
+    Only utilises tree's that have autoplace attributes. As otherwise we don't know their moisture and temperature requirements. This can lead to some tree types missing or with Alien Biomes some tiles having odd "best" tree types chosen.
 ]]
 
 --[[
     CODE NOTES:
         - Some of these objects aren't typed by field name, but instead indexed field number. This is based on how the code has been copied from the base Factorio game file. As its been copied and not queried by code adding names to the fields would be a manual process for every one. This same policy has been applied to the alien biomes data that's extracted from their files by a programmatic values dump.
         - Don't use `surface.calculate_tile_properties()` as its output numbers for moisture and temperature/aux (not sure which one to use) don't seem to correspond to the tree data we get. Maybe with a full re-write to get compatible numbers it could work, or it may need noise manipulation scripts run against them in some fashion... Left using the old method intentionally as it seems to give solid results.
+]]
+
+--[[
+    FUTURE:
+        - Look at using in-game data from tree and tile prototypes. Can use `surface.calculate_tile_properties()` to get position values. Check if this handles Alien Biomes tree to tile colors better. But also if it puts palm trees on sand. If I can't prototype the values for this then not sure worth the effort.
+        - Look at using non autoplaced trees, like the ones Alien Biomes uses in snow. But this would probably also require change to using all prototype data as the game knows to put these down sporadically on snow areas, but you don;t get forests of them it seems.
 ]]
 
 local TableUtils = require("utility.helper-utils.table-utils")
@@ -257,33 +263,37 @@ BiomeTrees._GetTreePossibilitiesForTileData = function(tileData)
             for _, tree in pairs(global.UTILITYBIOMETREES.treeData) do
                 treeTempMin, treeTempMax, treeMoistureMin, treeMoistureMax = tree.tempRange[1], tree.tempRange[2], tree.moistureRange[1], tree.moistureRange[2]
                 if treeTempMin <= tileTempMax and treeTempMax >= tileTempMin and treeMoistureMin <= tileMoistureMax and treeMoistureMax >= tileMoistureMin then
-                    local include = false
+                    local include, exclude = false, false
                     if tree.exclusivelyOnNamedTiles ~= nil then
-                        -- As there are exclusive tiles for this tree, only base inclusion on the tile type.
+                        -- As there are exclusive tiles for this tree, only also check colors of the allowed types. The allowed tiles list is a list of tiles that aren't excluded, rather than blindly included.
                         if tree.exclusivelyOnNamedTiles[tileData.name] then
                             if LogTags then LoggingUtils.ModLog("exclusive tile type match", false) end
-                            include = true
+                        else
+                            exclude = true
+                            if LogTags then LoggingUtils.ModLog("exclusive tile type NOT match", false) end
                         end
-                    else
-                        -- No exclusive tile restrictions so check tags. Mods either have no tile tags (base Factorio) or they have tile and possibly tree tags (alien biomes), so not all combination of tags need to be accounted for.
+                    end
+                    if not exclude then
+                        -- Check tags as not excluded by exclusive tile list. Mods either have no tile tags (base Factorio) or they have tile and tree tags (alien biomes), so not all combination of tags need to be accounted for.
                         if tileData.tags == nil then
                             -- No tile restriction tag so can just include.
                             include = true
                         elseif tree.tags ~= nil then
                             -- There are tree restriction tags that need checking against the tile data tags.
-                            -- CODE NOTE: there are less tags on tiles athan trees when both are present, so loop over each tile tag.
+                            -- CODE NOTE: there are less tags on tiles than trees when both are present, so loop over each tile tag.
                             for tileDataTag in pairs(tileData.tags) do
-                                if LogTags then LoggingUtils.ModLog("check tile tag: " .. tileDataTag, false) end
                                 if tree.tags[tileDataTag] ~= nil then
-                                    if LogTags then LoggingUtils.ModLog("tree name:: " .. tree.name .. "  --- matching tree tags: " .. TableUtils.TableKeyToCommaString(tree.tags), false) end
+                                    if LogTags then LoggingUtils.ModLog("check tile tag: " .. tileDataTag .. " --- tree name: " .. tree.name .. "  --- matching tree tags: " .. TableUtils.TableKeyToCommaString(tree.tags), false) end
                                     include = true
                                     break
+                                else
+                                    if LogTags then LoggingUtils.ModLog("check tile tag: " .. tileDataTag .. " --- found no match in tree tags", false) end
                                 end
                             end
                         end
                     end
 
-                    if (include) then
+                    if include then
                         -- Weight the tree probability based on how much of the tile-tree temp and moisture ranges overlap. So a tree that overlaps much more of the tiles ranges should have its tree probability much higher than one that doesn't. As we don't know where on the tiles range the square actually was in map gen, just that it got that tile. So we want to weight the tree chance across all of the possible range overlap areas.
                         local sharedTempMin, sharedTempMax = math_max(treeTempMin, tileTempMin), math_min(treeTempMax, tileTempMax)
                         local sharedMoistureMin, sharedMoistureMax = math_max(treeMoistureMin, tileMoistureMin), math_min(treeMoistureMax, tileMoistureMax)
