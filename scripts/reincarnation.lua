@@ -483,13 +483,13 @@ Reincarnation.AddCliffNearPosition = function(surface, targetPosition, orientati
     local cliffEntityLeft = surface.create_entity { name = "cliff", position = cliffPositionLeft, force = "neutral", cliff_orientation = cliffTypeLeft, raise_built = true }
     local cliffEntityRight = surface.create_entity { name = "cliff", position = cliffPositionRight, force = "neutral", cliff_orientation = cliffTypeRight, raise_built = true }
 
-    if cliffEntityLeft == nil or not cliffEntityLeft.valid or cliffEntityRight == nil or not cliffEntityRight.valid then
+    if cliffEntityLeft == nil or cliffEntityRight == nil then
         -- One of the cliffs isn't good so remove both silently.
-        if cliffEntityLeft ~= nil and cliffEntityLeft.valid then
+        if cliffEntityLeft ~= nil then
             cliffEntityLeft.destroy({ do_cliff_correction = false, raise_destroy = false })
             cliffEntityLeft = nil
         end
-        if cliffEntityRight ~= nil and cliffEntityRight.valid then
+        if cliffEntityRight ~= nil then
             cliffEntityRight.destroy({ do_cliff_correction = false, raise_destroy = false })
             cliffEntityRight = nil
         end
