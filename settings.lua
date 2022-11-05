@@ -60,7 +60,7 @@ data:extend(
         {
             name = "biter_reincarnation-max_reincarnations_per_second",
             type = "int-setting",
-            default_value = 50,
+            default_value = 100,
             minimum_value = 1,
             setting_type = "runtime-global",
             order = "1201"

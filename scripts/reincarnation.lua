@@ -46,7 +46,10 @@ local Reincarnation = {}
 
 ---@alias ReviveTypes "unit"|"turret"
 
-local MaxQueueCyclesPerSecond = 60
+-- How often the reincarnation queue is processed. These numbers must divide 60 cleanly.
+---@type uint, uint
+local QueueCyclesPerSecond, QueueCycleDelayTicks = 4, 15
+
 ---@enum ReincarnationType
 local ReincarnationType = { tree = "tree", burningTree = "burningTree", rock = "rock", cliff = "cliff" }
 ---@enum MovableEntityTypes
@@ -55,8 +58,8 @@ local MovableEntityTypes = { unit = "unit", character = "character", car = "car"
 local DebugLogging = false
 
 Reincarnation.OnLoad = function()
+    script.on_nth_tick(QueueCycleDelayTicks, Reincarnation.ProcessReincarnationQueue)
     Events.RegisterHandlerEvent(defines.events.on_runtime_mod_setting_changed, "Reincarnation.UpdateSetting", Reincarnation.UpdateSetting)
-    EventScheduler.RegisterScheduledEventType("Reincarnation.ProcessReincarnationQueue", Reincarnation.ProcessReincarnationQueue)
     script.on_event(defines.events.on_surface_deleted, Reincarnation.OnSurfaceRemoved)
     script.on_event(defines.events.on_surface_cleared, Reincarnation.OnSurfaceRemoved)
 
@@ -74,10 +77,6 @@ end
 Reincarnation.OnStartup = function()
     BiomeTrees.OnStartup()
     Reincarnation.UpdateSetting(nil)
-    -- Do at an offset from 0 to try and avoid bunching on other scheduled things ticks
-    if not EventScheduler.IsEventScheduledOnce("Reincarnation.ProcessReincarnationQueue", nil, nil) then
-        EventScheduler.ScheduleEventOnce(6 + game.tick + global.reincarnationQueueProcessDelay--[[@as uint]] , "Reincarnation.ProcessReincarnationQueue", nil, nil)
-    end
 
     -- Special to print any startup setting error messages after tick 0. Only needed if its tick 0 now.
     if game.tick == 0 then
@@ -111,11 +110,9 @@ Reincarnation.CreateGlobals = function()
     global.rawCliffOnDeathChance = global.rawCliffOnDeathChance or 0 ---@type double
     global.reincarnationQueue = global.reincarnationQueue or {} ---@type table<uint, ReincarnationQueueEntry> # The key is just a sequential Id.
     global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex or 0 ---@type uint
-    global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0 ---@type uint
-    global.reincarnationQueueProcessedPerSecond = global.reincarnationQueueProcessedPerSecond or 0 ---@type uint
-    global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond or 0 ---@type uint
-    global.reincarnationQueueCyclesPerSecond = global.reincarnationQueueCyclesPerSecond or 0 ---@type uint
-    global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond or 0 ---@type uint
+    global.reincarnationQueueProcessedPerStandardCycle = global.reincarnationQueueProcessedPerStandardCycle or 0 ---@type uint
+    global.reincarnationQueueProcessedPerFirstCycle = global.reincarnationQueueProcessedPerFirstCycle or 0 ---@type uint
+    global.reincarnationQueueProcessedCyclesThisSecond = global.reincarnationQueueProcessedCyclesThisSecond or 0 ---@type uint
     global.maxTicksWaitForReincarnation = global.maxTicksWaitForReincarnation or 0 ---@type uint
     global.blacklistedPrototypeNames = global.blacklistedPrototypeNames or {} ---@type table<string, true> @ The key is blacklisted prototype name, with a value of true.
     global.raw_BlacklistedPrototypeNames = global.raw_BlacklistedPrototypeNames or "" ---@type string @ The last recorded raw setting value.
@@ -156,11 +153,10 @@ Reincarnation.UpdateSetting = function(event)
     end
 
     if settingName == "biter_reincarnation-max_reincarnations_per_second" or settingName == nil then
-        local perSecond = settings.global["biter_reincarnation-max_reincarnations_per_second"].value
-        local cyclesPerSecond = math.min(perSecond, MaxQueueCyclesPerSecond)
-        global.reincarnationQueueProcessedPerSecond = perSecond
-        global.reincarnationQueueCyclesPerSecond = cyclesPerSecond
-        global.reincarnationQueueProcessDelay = math.floor(60 / cyclesPerSecond)
+        local reincarnationsPerSecond = settings.global["biter_reincarnation-max_reincarnations_per_second"].value
+        -- Catch left over from a number that doesn't divide cleanly by QueueCyclesPerSecond and add it to a special count for just that cycle that runs once per second.
+        global.reincarnationQueueProcessedPerStandardCycle = math.floor(reincarnationsPerSecond / QueueCyclesPerSecond)
+        global.reincarnationQueueProcessedPerFirstCycle = (reincarnationsPerSecond % (QueueCyclesPerSecond * global.reincarnationQueueProcessedPerStandardCycle)) + global.reincarnationQueueProcessedPerStandardCycle
     end
 
     if settingName == "biter_reincarnation-max_seconds_wait_for_reincarnation" or settingName == nil then
@@ -240,21 +236,23 @@ end
 --- Process the reincarnation queue.
 ---@param event UtilityScheduledEvent_CallbackObject
 Reincarnation.ProcessReincarnationQueue = function(event)
-    EventScheduler.ScheduleEventOnce(event.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
-    if DebugLogging then Logging.ModLog("", false) end
+    -- If there's nothing to be done, we don;t need to do any preparation work.
+    if next(global.reincarnationQueue) == nil then return game.print("abort") end
 
     local doneThisCycle = 0
-    if global.reincarnationQueueCyclesDoneThisSecond >= global.reincarnationQueueCyclesPerSecond then
-        if DebugLogging then Logging.ModLog("resetting current global counts", false) end
-        global.reincarnationQueueDoneThisSecond = 0
-        global.reincarnationQueueCyclesDoneThisSecond = 0
+
+    -- Work out how many tasks can be done this cycle. Complexity makes sure we do the right number of reincarnations spread over each second.
+    local tasksThisCycle
+    global.reincarnationQueueProcessedCyclesThisSecond = global.reincarnationQueueProcessedCyclesThisSecond + 1
+    if global.reincarnationQueueProcessedCyclesThisSecond == 1 then
+        tasksThisCycle = global.reincarnationQueueProcessedPerFirstCycle
+    else
+        tasksThisCycle = global.reincarnationQueueProcessedPerStandardCycle
     end
-    local tasksThisCycle = math.floor((global.reincarnationQueueProcessedPerSecond - global.reincarnationQueueDoneThisSecond) / (global.reincarnationQueueCyclesPerSecond - global.reincarnationQueueCyclesDoneThisSecond))
-    if DebugLogging then
-        Logging.ModLog("tasksThisCycle: " .. tasksThisCycle .. " reached via...", false)
-        Logging.ModLog("math.floor((" .. global.reincarnationQueueProcessedPerSecond .. " - " .. global.reincarnationQueueDoneThisSecond .. ") / (" .. global.reincarnationQueueCyclesPerSecond .. " - " .. global.reincarnationQueueCyclesDoneThisSecond .. "))", false)
+    if global.reincarnationQueueProcessedCyclesThisSecond == QueueCyclesPerSecond then
+        global.reincarnationQueueProcessedCyclesThisSecond = 0
     end
-    global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
+
     for k, details in pairs(global.reincarnationQueue) do
         -- Remove the entry from the queue first thing. As we might quite the loop mid processing.
         global.reincarnationQueue[k] = nil
@@ -277,8 +275,6 @@ Reincarnation.ProcessReincarnationQueue = function(event)
                 error("unsupported type: " .. type)
             end
             doneThisCycle = doneThisCycle + 1
-            global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond + 1
-            if DebugLogging then Logging.ModLog("1 reincarnation done", false) end
 
             if doneThisCycle >= tasksThisCycle then
                 return
