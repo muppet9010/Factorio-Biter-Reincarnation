@@ -7,3 +7,8 @@ if settings.global["biter_reincarnation-max_reincarnations_per_second"].value --
     max_reincarnations_per_second.value = 50
     settings.global["biter_reincarnation-max_reincarnations_per_second"] = max_reincarnations_per_second
 end
+
+-- Set the value of the new global.reincarnationQueueCurrentIndex if we need too.
+if global.reincarnationQueue ~= nil and next(global.reincarnationQueue) ~= nil and (global.reincarnationQueueCurrentIndex == nil or global.reincarnationQueueCurrentIndex == 0) then
+    global.reincarnationQueueCurrentIndex = #global.reincarnationQueue
+end

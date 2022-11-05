@@ -109,7 +109,8 @@ Reincarnation.CreateGlobals = function()
     global.rawBurningTreeOnDeathChance = global.rawBurningTreeOnDeathChance or 0 ---@type double
     global.rawRockOnDeathChance = global.rawRockOnDeathChance or 0 ---@type double
     global.rawCliffOnDeathChance = global.rawCliffOnDeathChance or 0 ---@type double
-    global.reincarnationQueue = global.reincarnationQueue or {} ---@type ReincarnationQueueEntry[]
+    global.reincarnationQueue = global.reincarnationQueue or {} ---@type table<uint, ReincarnationQueueEntry> # The key is just a sequential Id.
+    global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex or 0 ---@type uint
     global.reincarnationQueueProcessDelay = global.reincarnationQueueProcessDelay or 0 ---@type uint
     global.reincarnationQueueProcessedPerSecond = global.reincarnationQueueProcessedPerSecond or 0 ---@type uint
     global.reincarnationQueueDoneThisSecond = global.reincarnationQueueDoneThisSecond or 0 ---@type uint
@@ -239,7 +240,7 @@ end
 --- Process the reincarnation queue.
 ---@param event UtilityScheduledEvent_CallbackObject
 Reincarnation.ProcessReincarnationQueue = function(event)
-    EventScheduler.ScheduleEventOnce(event.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil) -- TODO: This is very costly.
+    EventScheduler.ScheduleEventOnce(event.tick + global.reincarnationQueueProcessDelay, "Reincarnation.ProcessReincarnationQueue", nil, nil)
     if DebugLogging then Logging.ModLog("", false) end
 
     local doneThisCycle = 0
@@ -255,7 +256,9 @@ Reincarnation.ProcessReincarnationQueue = function(event)
     end
     global.reincarnationQueueCyclesDoneThisSecond = global.reincarnationQueueCyclesDoneThisSecond + 1
     for k, details in pairs(global.reincarnationQueue) do
-        table.remove(global.reincarnationQueue, k) -- TODO: huge
+        -- Remove the entry from the queue first thing. As we might quite the loop mid processing.
+        global.reincarnationQueue[k] = nil
+
         -- If the revive is new enough then do it. Otherwise we just discard it and continue as we need to catch up to current ones.
         if details.loggedTick + global.maxTicksWaitForReincarnation >= event.tick then
             local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
@@ -322,7 +325,8 @@ Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, curre
         type = selectedReincarnationType.name,
         orientation = entity.orientation
     }
-    global.reincarnationQueue[#global.reincarnationQueue + 1] = details
+    global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex + 1
+    global.reincarnationQueue[global.reincarnationQueueCurrentIndex--[[@as uint]] ] = details
 end
 
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
@@ -359,7 +363,8 @@ Reincarnation.OnBiterReviveFailed = function(event)
         type = selectedReincarnationType.name,
         orientation = event.orientation
     }
-    global.reincarnationQueue[#global.reincarnationQueue + 1] = details
+    global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex + 1
+    global.reincarnationQueue[global.reincarnationQueueCurrentIndex--[[@as uint]] ] = details
 end
 
 --- Add a fire for a tree at a given position.
@@ -510,7 +515,7 @@ Reincarnation.OnSurfaceRemoved = function(event)
     -- Just empty the reincarnationQueue of any entries for that surface.
     for i, reincarnationDetails in pairs(global.reincarnationQueue) do
         if not reincarnationDetails.surface.valid or reincarnationDetails.surface.index == event.surface_index then
-            table.remove(global.reincarnationQueue, i)
+            global.reincarnationQueue[i] = nil
         end
     end
 end
