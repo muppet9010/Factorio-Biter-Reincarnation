@@ -109,10 +109,12 @@ Reincarnation.CreateGlobals = function()
     global.rawRockOnDeathChance = global.rawRockOnDeathChance or 0 ---@type double
     global.rawCliffOnDeathChance = global.rawCliffOnDeathChance or 0 ---@type double
     global.reincarnationQueue = global.reincarnationQueue or {} ---@type table<uint, ReincarnationQueueEntry> # The key is just a sequential Id.
-    global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex or 0 ---@type uint
-    global.reincarnationQueueProcessedPerStandardCycle = global.reincarnationQueueProcessedPerStandardCycle or 0 ---@type uint
-    global.reincarnationQueueProcessedPerFirstCycle = global.reincarnationQueueProcessedPerFirstCycle or 0 ---@type uint
-    global.reincarnationQueueProcessedCyclesThisSecond = global.reincarnationQueueProcessedCyclesThisSecond or 0 ---@type uint
+    global.reincarnationQueueNextInsertIndex = global.reincarnationQueueNextInsertIndex or 0 ---@type uint # The Id for the next addition to the global.reincarnationQueue.
+    global.reincarnationQueueProcessedPerStandardCycle = global.reincarnationQueueProcessedPerStandardCycle or 0 ---@type uint # The number of reincarnations to do per cycle on all but the first cycle each second. So is the whole number of the number of reincarnations per second divided by cycles per second.
+    global.reincarnationQueueProcessedPerFirstCycle = global.reincarnationQueueProcessedPerFirstCycle or 0 ---@type uint # The number of reincarnations to do one cycle per second. Pickups up the left over reincarnations from the standard cycle count.
+    global.reincarnationQueueProcessedCyclesThisSecond = global.reincarnationQueueProcessedCyclesThisSecond or 0 ---@type uint # Tracks how many cycles done this second so we know when to go back and use the process size of FirstCycle, rather than the rest of the cycles in the second which use the StandardCycle value.
+    global.reincarnationsQueueMaxSize = global.reincarnationsQueueMaxSize or 0 ---@type uint # How many entries we can have in the queue before we start ignoring death events as they won't be processed before the max wait time is reached.
+    global.reincarnationsQueueCurrentSize = global.reincarnationsQueueCurrentSize or 0 ---@type uint # The current number of reincarnations in the queue.
     global.maxTicksWaitForReincarnation = global.maxTicksWaitForReincarnation or 0 ---@type uint
     global.blacklistedPrototypeNames = global.blacklistedPrototypeNames or {} ---@type table<string, true> @ The key is blacklisted prototype name, with a value of true.
     global.raw_BlacklistedPrototypeNames = global.raw_BlacklistedPrototypeNames or "" ---@type string @ The last recorded raw setting value.
@@ -161,6 +163,11 @@ Reincarnation.UpdateSetting = function(event)
 
     if settingName == "biter_reincarnation-max_seconds_wait_for_reincarnation" or settingName == nil then
         global.maxTicksWaitForReincarnation = settings.global["biter_reincarnation-max_seconds_wait_for_reincarnation"].value * 60
+    end
+
+    if settingName == "biter_reincarnation-max_reincarnations_per_second" or settingName == "biter_reincarnation-max_seconds_wait_for_reincarnation" or settingName == nil then
+        -- If this gets increased or decreased we just leave the death recording and queue processing functions to catch up to the new value. Nothing needs to be proactively done at this stage.
+        global.reincarnationsQueueMaxSize = settings.global["biter_reincarnation-max_reincarnations_per_second"].value * settings.global["biter_reincarnation-max_seconds_wait_for_reincarnation"].value --[[@as uint]]
     end
 
     global.reincarnationChanceList = {
@@ -236,8 +243,8 @@ end
 --- Process the reincarnation queue.
 ---@param event UtilityScheduledEvent_CallbackObject
 Reincarnation.ProcessReincarnationQueue = function(event)
-    -- If there's nothing to be done, we don;t need to do any preparation work.
-    if next(global.reincarnationQueue) == nil then return game.print("abort") end
+    -- If there's nothing to be done, we don';'t need to do any preparation work.
+    if global.reincarnationsQueueCurrentSize == 0 then return end
 
     local doneThisCycle = 0
 
@@ -254,38 +261,45 @@ Reincarnation.ProcessReincarnationQueue = function(event)
     end
 
     for k, details in pairs(global.reincarnationQueue) do
-        -- Remove the entry from the queue first thing. As we might quite the loop mid processing.
+        -- Remove the entry from the queue first thing. As we might quit the loop mid processing.
         global.reincarnationQueue[k] = nil
 
-        -- If the revive is new enough then do it. Otherwise we just discard it and continue as we need to catch up to current ones.
-        if details.loggedTick + global.maxTicksWaitForReincarnation >= event.tick then
-            local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
-            if type == ReincarnationType.tree then
-                BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-            elseif type == ReincarnationType.burningTree then
-                local _, treePosition = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
-                if treePosition ~= nil then
-                    Reincarnation.AddTreeFireToPosition(surface, treePosition)
-                end
-            elseif type == ReincarnationType.rock then
-                Reincarnation.AddRockNearPosition(surface, targetPosition)
-            elseif type == ReincarnationType.cliff then
-                Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
-            else
-                error("unsupported type: " .. type)
+        -- Do the reincarnation.
+        local surface, targetPosition, type, orientation = details.surface, details.position, details.type, details.orientation
+        if type == ReincarnationType.tree then
+            BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+        elseif type == ReincarnationType.burningTree then
+            local _, treePosition = BiomeTrees.AddBiomeTreeNearPosition(surface, targetPosition, 2)
+            if treePosition ~= nil then
+                Reincarnation.AddTreeFireToPosition(surface, treePosition)
             end
-            doneThisCycle = doneThisCycle + 1
+        elseif type == ReincarnationType.rock then
+            Reincarnation.AddRockNearPosition(surface, targetPosition)
+        elseif type == ReincarnationType.cliff then
+            Reincarnation.AddCliffNearPosition(surface, targetPosition, orientation)
+        else
+            error("unsupported type: " .. type)
+        end
+        doneThisCycle = doneThisCycle + 1
 
-            if doneThisCycle >= tasksThisCycle then
-                return
-            end
+        -- Check if we have completed all the reincarnations we need to do
+        if doneThisCycle >= tasksThisCycle then
+            break
         end
     end
+
+    global.reincarnationsQueueCurrentSize = global.reincarnationsQueueCurrentSize - doneThisCycle
 end
 
 --- Called when a unit type entity died and the Biter Revive mod isn't present.
 ---@param event on_entity_died
 Reincarnation.OnEntityDiedUnit = function(event)
+
+    -- Check we aren't over our queue limit.
+    if global.reincarnationsQueueCurrentSize > global.reincarnationsQueueMaxSize then
+        return
+    end
+
     Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick)
 end
 
@@ -321,14 +335,21 @@ Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, curre
         type = selectedReincarnationType.name,
         orientation = entity.orientation
     }
-    global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex + 1
-    global.reincarnationQueue[global.reincarnationQueueCurrentIndex--[[@as uint]] ] = details
+    global.reincarnationQueueNextInsertIndex = global.reincarnationQueueNextInsertIndex + 1
+    global.reincarnationQueue[global.reincarnationQueueNextInsertIndex--[[@as uint]] ] = details
+    global.reincarnationsQueueCurrentSize = global.reincarnationsQueueCurrentSize + 1
 end
 
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterWontBeRevived_Event
 Reincarnation.OnBiterWontBeRevived = function(event)
     if event.reviveType ~= "unit" then return end
+
+    -- Check we aren't over our queue limit.
+    if global.reincarnationsQueueCurrentSize > global.reincarnationsQueueMaxSize then
+        return
+    end
+
     Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.entityName, event.force, event.forceIndex)
 end
 
@@ -336,6 +357,11 @@ end
 ---@param event BiterRevivedFailed_Event
 Reincarnation.OnBiterReviveFailed = function(event)
     if event.reviveType ~= "unit" then return end
+
+    -- Check we aren't over our queue limit.
+    if global.reincarnationsQueueCurrentSize > global.reincarnationsQueueMaxSize then
+        return
+    end
 
     -- Check if the prototype name is blacklisted.
     if global.blacklistedPrototypeNames[event.prototypeName] ~= nil then
@@ -359,8 +385,9 @@ Reincarnation.OnBiterReviveFailed = function(event)
         type = selectedReincarnationType.name,
         orientation = event.orientation
     }
-    global.reincarnationQueueCurrentIndex = global.reincarnationQueueCurrentIndex + 1
-    global.reincarnationQueue[global.reincarnationQueueCurrentIndex--[[@as uint]] ] = details
+    global.reincarnationQueueNextInsertIndex = global.reincarnationQueueNextInsertIndex + 1
+    global.reincarnationQueue[global.reincarnationQueueNextInsertIndex--[[@as uint]] ] = details
+    global.reincarnationsQueueCurrentSize = global.reincarnationsQueueCurrentSize + 1
 end
 
 --- Add a fire for a tree at a given position.
@@ -512,6 +539,7 @@ Reincarnation.OnSurfaceRemoved = function(event)
     for i, reincarnationDetails in pairs(global.reincarnationQueue) do
         if not reincarnationDetails.surface.valid or reincarnationDetails.surface.index == event.surface_index then
             global.reincarnationQueue[i] = nil
+            global.reincarnationsQueueCurrentSize = global.reincarnationsQueueCurrentSize - 1
         end
     end
 end

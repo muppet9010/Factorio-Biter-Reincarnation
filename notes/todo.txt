@@ -1,6 +1,9 @@
 TODO
 ----
 
+    - Add a valid mod setting to the max revives per second of unlimited. Update this in to the other features. This will effectively negate the max reincarnation time. Intended for Single Player where significant UPS drops are far more manageable than in Multi Player.
+    - Make sure documentation states that these settings are included to avoid high intensity combat periods having their UPS significantly impacted further by this mod. The mod is self limiting of its UPS impact and will favour loss of effects over UPS crippling.
+
 
 
 

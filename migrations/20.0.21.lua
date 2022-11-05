@@ -8,9 +8,15 @@ if settings.global["biter_reincarnation-max_reincarnations_per_second"].value --
     settings.global["biter_reincarnation-max_reincarnations_per_second"] = max_reincarnations_per_second
 end
 
--- Set the value of the new global.reincarnationQueueCurrentIndex if we need too.
-if global.reincarnationQueue ~= nil and next(global.reincarnationQueue) ~= nil and (global.reincarnationQueueCurrentIndex == nil or global.reincarnationQueueCurrentIndex == 0) then
-    global.reincarnationQueueCurrentIndex = #global.reincarnationQueue
+-- Set the value of the new globals based on current queue size if we need too.
+if global.reincarnationQueue ~= nil and next(global.reincarnationQueue) ~= nil then
+    if (global.reincarnationQueueNextInsertIndex == nil or global.reincarnationQueueNextInsertIndex == 0) then
+        global.reincarnationQueueNextInsertIndex = #global.reincarnationQueue
+    end
+
+    if (global.reincarnationsQueueCurrentSize == nil or global.reincarnationsQueueCurrentSize == 0) then
+        global.reincarnationsQueueCurrentSize = #global.reincarnationQueue
+    end
 end
 
 -- Remove any previously scheduled events as we don't need them any more. If they were to run they'd error as we don't have the handlers registered any more, using on_nth_tick instead.

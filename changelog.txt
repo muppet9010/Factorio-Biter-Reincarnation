@@ -5,15 +5,15 @@ Date: 2022-11-xxx
     - This mod now integrates with the Biter Revive mod, so that a dead biter doesn't trigger both mods. Biter Revive takes priority, with a non revived biter be available to reincarnate.
     - Added mod setting to blacklist (exclude) named entity types from reincarnating.
     - Added mod setting to blacklist (exclude) entities on specific forces from reincarnating. Defaults to excluding the `player` force.
-    - Mod is much more UPS efficient, especially in the creation of trees.
+    - Mod is much more UPS efficient throughout its activities, especially in the creation of trees and in situations of excessive high biter death rates.
   Changes:
     - Don't exclude all units that don't have the `breaths-air` flag on them. Had no real impact for base game units and the new blacklist mod settings allow this to be covered if needed with mods, but in a much more flexible way.
     - Increased max reincarnations per second mod setting to a default of 100. Old value was 10 as old code was less UPS efficient. This will also change a save game's mod setting on mod update if the saves value was the old default. Can't update a Factorio instances (not save game) mod settings however.
     - Updated Alien Biomes tile and tree data to latest version (0.6.8), no major changes observed.
+    - The mod only records reincarnations if they can be completed within the time span set by the settings. This is to reduce UPS impact when very large numbers of biters die in a short time span and wouldn't be processed for reincarnation quickly enough anyways. It does mean when reincarnations per second and max reincarnation wait time settings are changed there may be a few seconds delay before they fully take effect.
   Bugfixes:
     - Fix that if large entity push option was disabled things weren't actually crushed.
   Info:
-    - Changed how the reincarnation loop is triggered. Will lower the tiny idle UPS usage further. Will also save a little UPS for regular usage as well.
 ---------------------------------------------------------------------------------------------------
 Version: 20.0.20
 Date: 2022-04-01
