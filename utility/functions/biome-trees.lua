@@ -66,26 +66,31 @@ local LogTags = false -- Enable with other logging options to include details ab
 ---@class UtilityBiomeTrees_TileDetails
 ---@field name string
 ---@field type UtilityBiomeTrees_TileType
----@field tempRanges UtilityBiomeTrees_valueRange[]
----@field moistureRanges UtilityBiomeTrees_valueRange[]
+---@field tempRanges UtilityBiomeTrees_ValueRange[]
+---@field moistureRanges UtilityBiomeTrees_ValueRange[]
 ---@field rawTag? string # The raw string tag from alien biomes.
 ---@field tags? UtilityBiomeTrees_TagsList # Tag color strings as key and value.
+
+---@class UtilityBiomeTrees_ValueRange
+---@field [1] double # Min in this range. Alien biomes is -1 to 1. But likely the game supports any double.
+---@field [2] double # Max in this range. Alien biomes is -1 to 1. But likely the game supports any double.
 
 ---@alias UtilityBiomeTrees_RawTilesData table<string, UtilityBiomeTrees_RawTileData> # Key'd by tile name.
 ---@class UtilityBiomeTrees_RawTileData
 ---@field [1] UtilityBiomeTrees_TileType
----@field [2]? UtilityBiomeTrees_valueRange[] # tempRanges
----@field [3]? UtilityBiomeTrees_valueRange[] # moistureRanges
+---@field [2] UtilityBiomeTrees_RawValueRange[] # Range 1.
+---@field [3]? UtilityBiomeTrees_RawValueRange[] # Range 2.
 ---@field [4]? string # rawTag
 
----@class UtilityBiomeTrees_valueRange
----@field [1] double # Min in this range. Alien biomes is -1 to 1. But likely the game supports any double.
----@field [2] double # Max in this range. Alien biomes is -1 to 1. But likely the game supports any double.
+--- This is the values for the temperature and possibly moisture values within this range. Alien biomes is -1 to 1. But likely the game supports any double.
+---@class UtilityBiomeTrees_RawValueRange
+---@field [1] double[] # The min value for temperature (first) and possible also moisture (second?).
+---@field [2] double[] # The max value for temperature (first) and possible also moisture (second?).
 
 ---@class UtilityBiomeTrees_TreeDetails
 ---@field name string
----@field tempRange UtilityBiomeTrees_valueRange
----@field moistureRange UtilityBiomeTrees_valueRange
+---@field tempRange UtilityBiomeTrees_ValueRange
+---@field moistureRange UtilityBiomeTrees_ValueRange
 ---@field probability double
 ---@field tags? table<string, string> # Tag color strings as key and value.
 ---@field exclusivelyOnNamedTiles? table<string, string> # The names of tiles that the tree can only go on, tile name is the key and value in table.
@@ -320,7 +325,7 @@ BiomeTrees._GetTreePossibilitiesForTileData = function(tileData)
         end
 
         -- If we found some trees on the current accuracy no need to try any others.
-        if next(suitableTrees) ~= nil then
+        if next(suitableTrees_trees) ~= nil then
             if LogSuitablePositives then LoggingUtils.ModLog("trees found on accuracy: " .. rangeAccuracy, false) end
             suitableTrees.maxChance = currentChance
             break
@@ -431,12 +436,13 @@ end
 ---@param tileDetails UtilityBiomeTrees_TilesDetails
 ---@param tileName string
 ---@param type UtilityBiomeTrees_TileType
----@param range1? UtilityBiomeTrees_valueRange[]
----@param range2? UtilityBiomeTrees_valueRange[]
+---@param range1? UtilityBiomeTrees_RawValueRange[]
+---@param range2? UtilityBiomeTrees_RawValueRange[]
 ---@param rawTag? string
 BiomeTrees._AddTileDetails = function(tileDetails, tileName, type, range1, range2, rawTag)
-    local tempRanges = {} ---@type UtilityBiomeTrees_valueRange[]
-    local moistureRanges = {} ---@type UtilityBiomeTrees_valueRange[]
+    local tempRanges = {} ---@type UtilityBiomeTrees_ValueRange[]
+    local moistureRanges = {} ---@type UtilityBiomeTrees_ValueRange[]
+    -- Some of our water and void tiles don't have any temperature or moisture values, but we still want to record their type.
     if range1 ~= nil then
         tempRanges[#tempRanges + 1] = { range1[1][1] or 0, range1[2][1] or 0 }
         moistureRanges[#moistureRanges + 1] = { range1[1][2] or 0, range1[2][2] or 0 }

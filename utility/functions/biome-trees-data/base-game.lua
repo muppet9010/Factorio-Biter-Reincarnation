@@ -350,6 +350,9 @@ Data.GetTileData = function()
         ["nuclear-ground"] = { "allow-trees", { { 0, 0 }, { 0.25, 0.15 } } } --same as sand-1
     }
 
+    -- Hard code dirt-2 to have the same second range as dirt-1. By default dirt 2 doesn't have a second range. As from the raw input data it seems that no proper tree matches the conditions of dirt-2. Probably an oversight in main Factorio and due to the erratic way forests are created this never materialises as an issue. By keeping dirt-2's first range vanilla any custom trees in this range will also be included still, but for truly vanilla trees we will at least get dirt-1's.
+    tileData1["dirt-2"][3] = tileData1["dirt-1"][3] ---@diagnostic disable-line:no-unknown
+
     return TableUtils.TableMergeCopies({ tileData1, tileData2 })
 end
 
