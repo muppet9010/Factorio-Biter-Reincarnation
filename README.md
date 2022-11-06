@@ -23,8 +23,8 @@ Mod Behavior
 
 - Any units that breath air will trigger reincarnation then they die. The exception is the player character and compilatron.
 - If the combined chance of events occurring is greater than 100(%) the ratio of values will be utilised. If below 100% chance then there is the possibility of no event happening.
-- When biters die they join a reincarnation queue. The recording to the queue and processing of the queue is controllable by mod settings so you can limit the impact on UPS, thus avoiding game slowdown in excessively heavy combat situations.
-- Mod setting to control if large reincarnations will try and push anything movable out of the way (up to 2 tiles). Anything not moved will be crushed. Movable things include units, player characters and vehicles.
+- When biters die they join a reincarnation queue. The recording to the queue and processing of the queue is controllable by mod settings so you can limit the impact on UPS, thus avoiding game slowdown in excessively heavy combat situations. The mod settings to control how many reincarnations to do per second and the max wait time collectively apply a cap to the number of reincarnations that are tracked and completed, thus limiting max UPS impact. If you want all reincarnations to occur regardless of possible UPS impact during extreme biter death periods set these setting very high and all reincarnations will occur.
+- Mod setting to control if large reincarnations will try and push anything movable out of the way (up to 2 tiles). Anything not moved will be crushed. Movable things include units, player characters and vehicles. Large reincarnations are rocks and cliffs.
 - Mod setting to control tree fire spread to aid compatibility with other mods and very high tree maps.
 
 
@@ -33,6 +33,6 @@ Mod Behavior
 Mod Compatibility
 ==============
 
-- The mod is designed to integrate with the Biter Revive mod. Only 1 reaction will occur for a dead biter; Any biters that don't revive will be available for reincarnation. With reviving biters not also being valid for reincarnating.
+- The mod is designed to integrate elegantly with the Biter Revive mod. Only 1 reaction will occur for a dead biter; Any biters that don't revive will be available for reincarnation. With reviving biters not also being valid for reincarnating.
 - If a biter dies on a vanilla or Alien Biomes mod tile a biome related tree will be selected (best endeavours). For other modded tiles a truly random tree will be selected.
 - The mod should support and handle fully defined custom tree types that can be applied automatically via map generation, otherwise these custom trees will be ignored for tree selection.
