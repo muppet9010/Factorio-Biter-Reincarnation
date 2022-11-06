@@ -18,7 +18,7 @@
 --[[
     FUTURE:
         - Look at using in-game data from tree and tile prototypes. Can use `surface.calculate_tile_properties()` to get position values. Check if this handles Alien Biomes tree to tile colors better. But also if it puts palm trees on sand. If I can't prototype the values for this then not sure worth the effort.
-        - Look at using non autoplaced trees, like the ones Alien Biomes uses in snow. But this would probably also require change to using all prototype data as the game knows to put these down sporadically on snow areas, but you don;t get forests of them it seems.
+        - Look at using non autoplaced trees, like the ones Alien Biomes uses in snow. But this would probably also require change to using all prototype data as the game knows to put these down sporadically on snow areas, but you don't get forests of them it seems.
 ]]
 
 local TableUtils = require("utility.helper-utils.table-utils")

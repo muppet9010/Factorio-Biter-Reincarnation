@@ -1,13 +1,13 @@
 TODO
 ----
 
+    - Add reincarnation option for worms of shallow water. do 2x2 for small and medium worms and 3x3 for large and behemoth. Check each tile won't collide with any building entities, as they would be destroyed. But biters can walk on it fine. Looking at natural biter base generation there is always a gap between worms and biter bases. And while both are off tile center, this gap is big enough that the water should never collide with other biter buildings around it. Watch out for cliffs as if they are on the tile border that we change to water they get destroyed, so do the collision box area check a tad larger than the border of the tiles we will change. Also check there's no ore on the tiles, as we don't want to remove ore via this. If we remove trees or rocks that's fine.
+
 
 
 
 FUTURE IDEAS
 ------------
 
-    - Add mod options to reincarnate worms. This should be a worm set of the mod settings that control chances. Set defaults to be 0 for all. Don't include tree as that would just be odd.
-    - Add reincarnation option for worms of shallow water. do 2x2 for small and medium worms and 3x3 for large and behemoth. Check each tile won't collide with any building entities, as they would be destroyed. But biters can walk on it fine. Looking at natural biter base generation there is always a gap between worms and biter bases. And while both are off tile center, this gap is big enough that the water should never collide with other biter buildings around it. Watch out for cliffs as if they are on the tile border that we change to water they get destroyed, so do the collision box area check a tad larger than the border of the tiles we will change. Also check there's no ore on the tiles, as we don't want to remove ore via this. If we remove trees or rocks that's fine.
     - If chance settings are all off for a type (unit/worm) then don't need to react to any events for that type.
     - Handle custom rock types that alien biomes adds for many of the colored areas. Can also pick regular and sandy rocks for base Factorio tiles if base game links rock type to tiles ?

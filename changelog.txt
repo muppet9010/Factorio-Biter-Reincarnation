@@ -6,6 +6,8 @@ Date: 2022-11-xxx
     - Added mod setting to blacklist (exclude) named entity types from reincarnating.
     - Added mod setting to blacklist (exclude) entities on specific forces from reincarnating. Defaults to excluding the `player` force.
     - Mod is much more UPS efficient throughout its activities, especially in the creation of trees and in situations of excessive high biter death rates.
+    - Added support for worms reincarnating. They can return as rocks, cliffs or shallow water. Dy default they don't reincarnate.
+    - Added shallow water option for worms to reincarnate as. This has some protection in its placement to avoid it destroying resource and cliffs.
   Changes:
     - Don't exclude all units that don't have the `breaths-air` flag on them. Had no real impact for base game units and the new blacklist mod settings allow this to be covered if needed with mods, but in a much more flexible way.
     - Increased max reincarnations per second mod setting to a default of 100. Old value was 10 as old code was less UPS efficient. This will also change a save game's mod setting on mod update if the saves value was the old default. Can't update a Factorio instances (not save game) mod settings however.
