@@ -599,7 +599,9 @@ Reincarnation.AddWaterToPosition = function(surface, targetPosition, waterSize)
     -- Work out where the center and areas to check will be. This varies based on water size.
     ---@type table, Tile[]
     local roundedCenterPos, tilePositions = {}, {}
-    if waterSize == 2 then
+    local halfWaterSize = waterSize / 2
+    if waterSize % 2 == 0 then
+        -- WaterSize of event number
         -- The center is aligned to the border of tiles.
         if targetPosition.x % 1 < 0.5 then
             roundedCenterPos.x = math.floor(targetPosition.x)
@@ -612,32 +614,29 @@ Reincarnation.AddWaterToPosition = function(surface, targetPosition, waterSize)
             roundedCenterPos.y = math.ceil(targetPosition.y)
         end
         ---@cast roundedCenterPos TilePosition # We only assign whole numbers to it.
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1, y = roundedCenterPos.y - 1 }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1, y = roundedCenterPos.y }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x, y = roundedCenterPos.y - 1 }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x, y = roundedCenterPos.y }, name = "water-shallow" }
+        for x = roundedCenterPos.x - halfWaterSize, roundedCenterPos.x + (halfWaterSize - 1) do
+            for y = roundedCenterPos.y - halfWaterSize, roundedCenterPos.y + (halfWaterSize - 1) do
+                tilePositions[#tilePositions + 1] = { position = { x = x, y = y }, name = "water-shallow" }
+            end
+        end
     else
-        -- WaterSize of 3
+        -- WaterSize of odd number.
         -- The center is aligned to the middle of a tile.
         roundedCenterPos.x = math.floor(targetPosition.x) + 0.5
         roundedCenterPos.y = math.floor(targetPosition.y) + 0.5
         ---@cast roundedCenterPos MapPosition # The values are all going to be X.5.
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1.5 --[[@as int]] , y = roundedCenterPos.y - 1.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 0.5 --[[@as int]] , y = roundedCenterPos.y - 1.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x + 0.5 --[[@as int]] , y = roundedCenterPos.y - 1.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1.5 --[[@as int]] , y = roundedCenterPos.y - 0.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 0.5 --[[@as int]] , y = roundedCenterPos.y - 0.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x + 0.5 --[[@as int]] , y = roundedCenterPos.y - 0.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1.5 --[[@as int]] , y = roundedCenterPos.y + 0.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 0.5 --[[@as int]] , y = roundedCenterPos.y + 0.5 --[[@as int]] }, name = "water-shallow" }
-        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x + 0.5 --[[@as int]] , y = roundedCenterPos.y + 0.5 --[[@as int]] }, name = "water-shallow" }
+        for x = roundedCenterPos.x - halfWaterSize, roundedCenterPos.x + (halfWaterSize - 1) do
+            for y = roundedCenterPos.y - halfWaterSize, roundedCenterPos.y + (halfWaterSize - 1) do
+                tilePositions[#tilePositions + 1] = { position = { x = x, y = y }, name = "water-shallow" }
+            end
+        end
     end
     ---@cast roundedCenterPos MapPosition
 
     -- Initially trying without removing any colliding entities for the shallow water, so no need to do any checks.
     --[[
         -- We may need to make this a tiny bit larger for cliffs, but then we may find ore in adjacent tiles that we don't care about... As in Editor mode testing cliffs hard against the border with an adjacent tile that was turned to water were destroyed.
-        local searchArea = PositionUtils.CalculateBoundingBoxFromPositionAndRange(roundedCenterPos, waterSize)
+        local searchArea = PositionUtils.CalculateBoundingBoxFromPositionAndRange(roundedCenterPos, waterSize/2)
 
         -- Initially just check there is nothing we care about across all of the tiles. As there almost never will be and so no point doing it per tile when we don't need too.
         -- We just care about cliffs and resources for now. As biter bases are laid out with enough spacing between buildings.

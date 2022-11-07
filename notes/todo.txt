@@ -7,5 +7,6 @@ TODO
 FUTURE IDEAS
 ------------
 
+    - If the water and worm corpse not being aligned is too annoying. We could await the post died event (just turrets) and then get the corpse for the worm unit. Then remove the natural worm corpse. We can create our own corpse as part of making the water. For Biter Revive events in some cases we will have the corpse already and can pass it through. Can do the match up between death and post events using unit_number. Can also make the water size better match the corpse size this way, rather than currently we down size it so that it doesn't protrude too much visually.
     - If chance settings are all off for a type (unit/worm) then don't need to react to any events for that type.
     - Handle custom rock types that alien biomes adds for many of the colored areas. Can also pick regular and sandy rocks for base Factorio tiles if base game links rock type to tiles ?
