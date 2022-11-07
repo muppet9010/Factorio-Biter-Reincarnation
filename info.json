@@ -10,5 +10,5 @@
         "base >= 1.1.57",
         "? biter_revive"
     ],
-    "description": "When an enemy unit dies it tries to reincarnate back in to nature, be it a tree, rock or cliff. Occasionally the angry ones can burst into a flaming tree."
+    "description": "When an enemy unit or worm dies it tries to reincarnate back in to nature, be it a tree, rock, cliff or water. Occasionally the angry biters can burst into a flaming tree."
 }

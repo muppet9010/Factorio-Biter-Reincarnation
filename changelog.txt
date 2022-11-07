@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 20.0.21
-Date: 2022-11-xxx
+Date: 2022-11-07
   Features:
     - This mod now integrates with the Biter Revive mod, so that a dead biter doesn't trigger both mods. Biter Revive takes priority, with a non revived biter be available to reincarnate.
     - Added mod setting to blacklist (exclude) named entity types from reincarnating.
