@@ -596,8 +596,6 @@ end
 ---@param targetPosition MapPosition
 ---@param waterSize uint
 Reincarnation.AddWaterToPosition = function(surface, targetPosition, waterSize)
-    --TODO: Check each tile won't collide with any spawner & turret building entities, as they would be destroyed. But biters can walk on it fine. Looking at natural biter base generation there is always a gap between worms and biter bases. And while both are off tile center, this gap is big enough that the water should never collide with other biter buildings around it. Watch out for cliffs as if they are on the tile border that we change to water they get destroyed, so do the collision box area check a tad larger than the border of the tiles we will change. Also check there's no ore on the tiles, as we don't want to remove ore via this. If we remove trees or rocks that's fine.
-
     -- Work out where the center and areas to check will be. This varies based on water size.
     ---@type table, Tile[]
     local roundedCenterPos, tilePositions = {}, {}
@@ -636,18 +634,21 @@ Reincarnation.AddWaterToPosition = function(surface, targetPosition, waterSize)
     end
     ---@cast roundedCenterPos MapPosition
 
-    local searchArea = PositionUtils.CalculateBoundingBoxFromPositionAndRange(roundedCenterPos, waterSize) -- TODO: we may need to make this a tiny bit larger for cliffs, but then we may find ore in adjacent tiles that we don't care about...
+    -- Initially trying without removing any colliding entities for the shallow water, so no need to do any checks.
+    --[[
+        -- We may need to make this a tiny bit larger for cliffs, but then we may find ore in adjacent tiles that we don't care about... As in Editor mode testing cliffs hard against the border with an adjacent tile that was turned to water were destroyed.
+        local searchArea = PositionUtils.CalculateBoundingBoxFromPositionAndRange(roundedCenterPos, waterSize)
 
-    -- Initially just check there is nothing we care about across all of the tiles. As there almost never will be and so no point doing it per tile when we don't need too.
-    -- We just care about cliffs and resources for now. As biter bases are laid out with enough spacing between buildings.
-    local collisionThingFound = surface.find_entities_filtered({ area = searchArea, type = { "cliff, resource" } })
-    if #collisionThingFound > 0 then
-        -- Stuff found in the way, need to check each planned water tile individually.
-        local x = 1
-    end
+        -- Initially just check there is nothing we care about across all of the tiles. As there almost never will be and so no point doing it per tile when we don't need too.
+        -- We just care about cliffs and resources for now. As biter bases are laid out with enough spacing between buildings.
+        local collisionThingFound = surface.find_entities_filtered({ area = searchArea, type = { "cliff, resource" } })
+        if #collisionThingFound > 0 then
+            -- Stuff found in the way, need to check each planned water tile individually.
+        end
+    ]]
 
-    -- Add the water to the remaining valid water tile positions. This will destroy any entities that collide with shallow water.
-    surface.set_tiles(tilePositions, true, true, true, true)
+    -- Add the water to the remaining valid water tile positions. This will NOT destroy any entities that collide with shallow water.
+    surface.set_tiles(tilePositions, true, false, true, true)
 end
 
 --- Called when a surface is removed or cleared and we need to remove any scheduled reincarnations on that surface and other cached data.
