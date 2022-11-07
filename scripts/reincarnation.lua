@@ -7,6 +7,7 @@ local EntityUtils = require("utility.helper-utils.entity-utils")
 local StringUtils = require("utility.helper-utils.string-utils")
 local LoggingUtils = require("utility.helper-utils.logging-utils")
 local MathUtils = require("utility.helper-utils.math-utils")
+local PositionUtils = require("utility.helper-utils.position-utils")
 local Reincarnation = {}
 
 ---@class ReincarnationChanceEntry
@@ -595,8 +596,58 @@ end
 ---@param targetPosition MapPosition
 ---@param waterSize uint
 Reincarnation.AddWaterToPosition = function(surface, targetPosition, waterSize)
-    game.print("adding water - honest")
-    --TODO
+    --TODO: Check each tile won't collide with any spawner & turret building entities, as they would be destroyed. But biters can walk on it fine. Looking at natural biter base generation there is always a gap between worms and biter bases. And while both are off tile center, this gap is big enough that the water should never collide with other biter buildings around it. Watch out for cliffs as if they are on the tile border that we change to water they get destroyed, so do the collision box area check a tad larger than the border of the tiles we will change. Also check there's no ore on the tiles, as we don't want to remove ore via this. If we remove trees or rocks that's fine.
+
+    -- Work out where the center and areas to check will be. This varies based on water size.
+    ---@type table, Tile[]
+    local roundedCenterPos, tilePositions = {}, {}
+    if waterSize == 2 then
+        -- The center is aligned to the border of tiles.
+        if targetPosition.x % 1 < 0.5 then
+            roundedCenterPos.x = math.floor(targetPosition.x)
+        else
+            roundedCenterPos.x = math.ceil(targetPosition.x)
+        end
+        if targetPosition.y % 1 < 0.5 then
+            roundedCenterPos.y = math.floor(targetPosition.y)
+        else
+            roundedCenterPos.y = math.ceil(targetPosition.y)
+        end
+        ---@cast roundedCenterPos TilePosition # We only assign whole numbers to it.
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1, y = roundedCenterPos.y - 1 }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1, y = roundedCenterPos.y }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x, y = roundedCenterPos.y - 1 }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x, y = roundedCenterPos.y }, name = "water-shallow" }
+    else
+        -- WaterSize of 3
+        -- The center is aligned to the middle of a tile.
+        roundedCenterPos.x = math.floor(targetPosition.x) + 0.5
+        roundedCenterPos.y = math.floor(targetPosition.y) + 0.5
+        ---@cast roundedCenterPos MapPosition # The values are all going to be X.5.
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1.5 --[[@as int]] , y = roundedCenterPos.y - 1.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 0.5 --[[@as int]] , y = roundedCenterPos.y - 1.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x + 0.5 --[[@as int]] , y = roundedCenterPos.y - 1.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1.5 --[[@as int]] , y = roundedCenterPos.y - 0.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 0.5 --[[@as int]] , y = roundedCenterPos.y - 0.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x + 0.5 --[[@as int]] , y = roundedCenterPos.y - 0.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 1.5 --[[@as int]] , y = roundedCenterPos.y + 0.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x - 0.5 --[[@as int]] , y = roundedCenterPos.y + 0.5 --[[@as int]] }, name = "water-shallow" }
+        tilePositions[#tilePositions + 1] = { position = { x = roundedCenterPos.x + 0.5 --[[@as int]] , y = roundedCenterPos.y + 0.5 --[[@as int]] }, name = "water-shallow" }
+    end
+    ---@cast roundedCenterPos MapPosition
+
+    local searchArea = PositionUtils.CalculateBoundingBoxFromPositionAndRange(roundedCenterPos, waterSize) -- TODO: we may need to make this a tiny bit larger for cliffs, but then we may find ore in adjacent tiles that we don't care about...
+
+    -- Initially just check there is nothing we care about across all of the tiles. As there almost never will be and so no point doing it per tile when we don't need too.
+    -- We just care about cliffs and resources for now. As biter bases are laid out with enough spacing between buildings.
+    local collisionThingFound = surface.find_entities_filtered({ area = searchArea, type = { "cliff, resource" } })
+    if #collisionThingFound > 0 then
+        -- Stuff found in the way, need to check each planned water tile individually.
+        local x = 1
+    end
+
+    -- Add the water to the remaining valid water tile positions. This will destroy any entities that collide with shallow water.
+    surface.set_tiles(tilePositions, true, true, true, true)
 end
 
 --- Called when a surface is removed or cleared and we need to remove any scheduled reincarnations on that surface and other cached data.
