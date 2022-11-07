@@ -491,20 +491,25 @@ end
 ---@param createdEntity LuaEntity
 Reincarnation.DisplaceEntitiesInBoundingBox = function(surface, createdEntity)
     for _, entity in pairs(EntityUtils.ReturnAllObjectsInArea(surface, createdEntity.bounding_box, true, nil, true, true, { createdEntity })) do
+        local entityType = entity.type
         if global.largeReincarnationsPush then
+            -- Try to push things before crushing them.
             local entityMoved = false
-            if MovableEntityTypes[entity.type] ~= nil then
+            if MovableEntityTypes[entityType] ~= nil then
                 local entityNewPosition = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.1)
                 if entityNewPosition ~= nil then
                     entity.teleport(entityNewPosition)
                     entityMoved = true
                 end
             end
-            if not entityMoved then
+            if not entityMoved and entityType ~= "unit-spawner" and entityType ~= "turret" then
                 entity.die("neutral", createdEntity)
             end
         else
-            entity.die("neutral", createdEntity)
+            -- Just crush things.
+            if entityType ~= "unit-spawner" and entityType ~= "turret" then
+                entity.die("neutral", createdEntity)
+            end
         end
     end
 end
