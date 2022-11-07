@@ -1,10 +1,29 @@
 ---------------------------------------------------------------------------------------------------
+Version: 20.0.21
+Date: 2022-11-07
+  Features:
+    - This mod now integrates with the Biter Revive mod, so that a dead biter doesn't trigger both mods. Biter Revive takes priority, with a non revived biter be available to reincarnate.
+    - Added mod setting to blacklist (exclude) named entity types from reincarnating.
+    - Added mod setting to blacklist (exclude) entities on specific forces from reincarnating. Defaults to excluding the `player` force.
+    - Mod is much more UPS efficient throughout its activities, especially in the creation of trees and in situations of excessive high biter death rates.
+    - Added support for worms reincarnating. They can return as rocks, cliffs or shallow water. Dy default they don't reincarnate.
+    - Added shallow water option for worms to reincarnate as. This won't ever destroy any entities or resources that would collide with the water to avoid complexity and keep gameplay smooth.
+  Changes:
+    - Don't exclude all units that don't have the `breaths-air` flag on them. Had no real impact for base game units and the new blacklist mod settings allow this to be covered if needed with mods, but in a much more flexible way.
+    - Increased max reincarnations per second mod setting to a default of 100. Old value was 10 as old code was less UPS efficient. This will also change a save game's mod setting on mod update if the saves value was the old default. Can't update a Factorio instances (not save game) mod settings however.
+    - Updated Alien Biomes tile and tree data to latest version (0.6.8), no major changes observed.
+    - The mod only records reincarnations if they can be completed within the time span set by the settings. This is to reduce UPS impact when very large numbers of biters die in a short time span and wouldn't be processed for reincarnation quickly enough anyways. It does mean when reincarnations per second and max reincarnation wait time settings are changed there may be a few seconds delay before they fully take effect.
+    - Spawners and worms won't be crushed by large reincarnations any more. As this could mean killing a biter which reincarnated as a cliff could kill a worm instantly.
+  Bugfixes:
+    - Fix that if large entity push option was disabled things weren't actually crushed.
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 20.0.20
 Date: 2022-04-01
   Features:
   Changes:
   Bugfixes:
-    - Removed work around introduced in previous mod version to mitigate core Factrio bug present only in 1.1.56.
+    - Removed work around introduced in previous mod version to mitigate core Factorio bug present only in 1.1.56.
   Info:
 ---------------------------------------------------------------------------------------------------
 Version: 20.0.19
@@ -77,12 +96,12 @@ Date: 2020-10-11
   Features:
     - Options added to have biters reincarnate as rocks and cliffs. Option to try and push movable entities out of the way, otherwise things are crushed.
   Changes:
-    - Mod now reacts to all units that breath air dieing, rather than just units on the "enemy" force. Excluded player character and compilatron.
+    - Mod now reacts to all units that breath air dying, rather than just units on the "enemy" force. Excluded player character and compilatron.
   Bugfixes:
-    - Support the new nuclear-ground tile type. Treated the same as landfil, as the dryest sand.
+    - Support the new nuclear-ground tile type. Treated the same as landfill, as the driest sand.
   Info:
     - Removed the biter_reincarnation remote interface as the functionality is included in my main utility library. No current other mod versions utilised the interface.
-    - Moved to using the tree generation code from my main utility library. Should be bascailly the same.
+    - Moved to using the tree generation code from my main utility library. Should be basically the same.
     - Updated all mod settings to be a standardised format and include the mod name in them. Should be handled by migration scripts.
 ---------------------------------------------------------------------------------------------------
 Version: 18.0.10
@@ -108,7 +127,7 @@ Date: 2020-01-04
   Changes:
   Bugfixes:
     - "add_random_tile_based_tree_near_position" remote call didn't link to a valid function name before.
-    - fixed desync caused when other mods utilised the remote interface of this mod. Was incorrectly registered causing speradic availability.
+    - fixed desync caused when other mods utilised the remote interface of this mod. Was incorrectly registered causing sporadic availability.
   Info:
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.7
@@ -126,7 +145,7 @@ Date: 2019-12-14
     - New features and changes to improve UPS on very high biter death maps
     - Added max concurrent reincarnations and reincarnation queue system with mod settings.
   Changes:
-    - Removed anti fire spread option & code as offerign it was causing big UPS issues when very high concurrent number of biters were being damaged. Use max fire spread option or limit chance of reincarnation into burning trees to prevent massive forest fires.
+    - Removed anti fire spread option & code as offering it was causing big UPS issues when very high concurrent number of biters were being damaged. Use max fire spread option or limit chance of reincarnation into burning trees to prevent massive forest fires.
   Bugfixes:
   Info:
     - Uses event filter to reduce Entity Damaged calls
@@ -146,7 +165,7 @@ Date: 2019-06-24
   Changes:
   Bugfixes:
     - Changed to work with mods that add new trees without autoplace settings. May no longer error with special mods that do their own map generation, but won't put the expected trees either.
-    - Set to be specifcially incompatible with Alien Biomes mod due to its custom tiles.
+    - Set to be specifically incompatible with Alien Biomes mod due to its custom tiles.
   Info:
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.3
@@ -157,7 +176,7 @@ Date: 2019-06-02
   Changes:
   Bugfixes:
   Info:
-    - remove erronous logging
+    - remove erroneous logging
 ---------------------------------------------------------------------------------------------------
 Version: 17.0.2
 Date: 2019-05-31
@@ -175,7 +194,7 @@ Date: 2019-05-31
     - Add script interface for using the entity generation logic.
     - Tree data is obtained from data so supports modded trees (not modded tiles).
     - Tree type selection respects tree probability so tree mix should match local natural forests more.
-    - Combined chance of events occuring can be greater than 100%. The ratio of values will be utilised. Below 100% chance means possibility of no event happening.
+    - Combined chance of events occurring can be greater than 100%. The ratio of values will be utilised. Below 100% chance means possibility of no event happening.
   Bugfixes:
     - Fixed incorrect tile data handling and manual adjustment code. The trees should be basically correct on all tile types now.
   Info:

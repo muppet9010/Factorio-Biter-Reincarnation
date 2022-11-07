@@ -1,5 +1,5 @@
-local Reincarnation = require("scripts/reincarnation")
-local EventScheduler = require("utility/event-scheduler")
+local Reincarnation = require("scripts.reincarnation")
+local EventScheduler = require("utility.manager-libraries.event-scheduler")
 
 local function CreateGlobals()
     Reincarnation.CreateGlobals()

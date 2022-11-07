@@ -1,7 +1,13 @@
-20.5.30
+20.11.44
 
 Created by Muppet9010: https://github.com/muppet9010/Factorio-Utils
 
-Hotfixs:
-	- biome-trees.lua - patched up to 20.7.37 - Muppet Streamer 20.0.16
-    - biome-trees.lua and biome-trees-data\base-game.lua - changes made to fix non defined tile crash and updated in to Utility 20.7.37 as being modified in Railway Tunnel's mod - Muppet Streamer 20.0.16
+
+HOTFIXES
+========
+
+- These Biome Tree files have been fully updated and synced to Utility WIP version 20.12.45. Unlike the usual hotfixes that are just odd functions in the libraries.
+    - utility\functions\biome-trees.lua - BiomeTrees.AddBiomeTreeNearPosition() - returns treeName and the position it was placed.
+    - utility\functions\biome-trees.lua - odd changes throughout file to streamline to be more efficient by running once to cover the whole tile spectrum and then caching the results. Shouldn't have any impact on usage of the library.
+    - utility\functions\biome-trees-data\alien-biomes.lua - updated for current alien biomes version (0.6.8).
+    - utility\functions\biome-trees-data\base-game.lua - updated for current factorio release (1.1.70).

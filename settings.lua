@@ -18,7 +18,7 @@ data:extend(
             name = "biter_reincarnation-turn_to_tree_chance_percent",
             type = "int-setting",
             default_value = 90,
-            minomum_value = 0,
+            minimum_value = 0,
             maximum_value = 100,
             setting_type = "runtime-global",
             order = "1001"
@@ -35,7 +35,7 @@ data:extend(
         {
             name = "biter_reincarnation-turn_to_rock_chance_percent",
             type = "int-setting",
-            default_value = 8,
+            default_value = 9,
             minimum_value = 0,
             maximum_value = 100,
             setting_type = "runtime-global",
@@ -51,6 +51,33 @@ data:extend(
             order = "1004"
         },
         {
+            name = "biter_reincarnation-worm_turn_to_rock_chance_percent",
+            type = "int-setting",
+            default_value = 0,
+            minimum_value = 0,
+            maximum_value = 100,
+            setting_type = "runtime-global",
+            order = "1005"
+        },
+        {
+            name = "biter_reincarnation-worm_turn_to_cliff_chance_percent",
+            type = "int-setting",
+            default_value = 0,
+            minimum_value = 0,
+            maximum_value = 100,
+            setting_type = "runtime-global",
+            order = "1006"
+        },
+        {
+            name = "biter_reincarnation-worm_turn_to_water_chance_percent",
+            type = "int-setting",
+            default_value = 0,
+            minimum_value = 0,
+            maximum_value = 100,
+            setting_type = "runtime-global",
+            order = "1007"
+        },
+        {
             name = "biter_reincarnation-large_reincarnations_push",
             type = "bool-setting",
             default_value = true,
@@ -60,7 +87,7 @@ data:extend(
         {
             name = "biter_reincarnation-max_reincarnations_per_second",
             type = "int-setting",
-            default_value = 10,
+            default_value = 100,
             minimum_value = 1,
             setting_type = "runtime-global",
             order = "1201"
@@ -72,6 +99,22 @@ data:extend(
             minimum_value = 1,
             setting_type = "runtime-global",
             order = "1202"
+        },
+        {
+            name = "biter_reincarnation-blacklisted_prototype_names",
+            type = "string-setting",
+            allow_blank = true,
+            default_value = "compilatron",
+            setting_type = "runtime-global",
+            order = "2000"
+        },
+        {
+            name = "biter_reincarnation-blacklisted_force_names",
+            type = "string-setting",
+            allow_blank = true,
+            default_value = "player",
+            setting_type = "runtime-global",
+            order = "2001"
         }
     }
 )
