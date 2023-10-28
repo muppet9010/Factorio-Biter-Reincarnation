@@ -77,14 +77,14 @@ Reincarnation.OnLoad = function()
     -- If Biter Revive mod is present listen to its unit died events, otherwise listen to main Factorio died events.
     if remote.interfaces["biter_revive"] ~= nil then
         local wontBeRevivedEventId = remote.call("biter_revive", "get_biter_wont_be_revived_event_id") --[[@as uint]]
-        Events.RegisterHandlerEvent(wontBeRevivedEventId--[[@as defines.events]] , "Reincarnation.OnBiterWontBeRevived", Reincarnation.OnBiterWontBeRevived)
+        Events.RegisterHandlerEvent(wontBeRevivedEventId --[[@as defines.events]], "Reincarnation.OnBiterWontBeRevived", Reincarnation.OnBiterWontBeRevived)
         local reviveFailedEventId = remote.call("biter_revive", "get_biter_revive_failed_event_id") --[[@as uint]]
-        Events.RegisterHandlerEvent(reviveFailedEventId--[[@as defines.events]] , "Reincarnation.OnBiterReviveFailed", Reincarnation.OnBiterReviveFailed)
+        Events.RegisterHandlerEvent(reviveFailedEventId --[[@as defines.events]], "Reincarnation.OnBiterReviveFailed", Reincarnation.OnBiterReviveFailed)
 
         --We need to subscribe to worm deaths based on the runtime mod setting of `include_biological_turrets` from the Revive Mod. So we need to both react to the initial value and subscribe to be told when that mod's setting is changed during the game.
         ---@type uint, boolean
         local wormsWillReviveSettingChangedEventId, wormsWillReviveSettingValue = remote.call("biter_revive", "get_worm_revive_setting_changed_event_id")
-        Events.RegisterHandlerEvent(wormsWillReviveSettingChangedEventId--[[@as defines.events]] , "Reincarnation.OnWormsWillReviveSettingChanged", Reincarnation.OnWormsWillReviveSettingChanged)
+        Events.RegisterHandlerEvent(wormsWillReviveSettingChangedEventId --[[@as defines.events]], "Reincarnation.OnWormsWillReviveSettingChanged", Reincarnation.OnWormsWillReviveSettingChanged)
         -- When it's non a mod change (i.e. on_load) then we need to trigger getting the current worm revive setting so we know what to register.
         Reincarnation.OnWormsWillReviveSettingChanged(nil, wormsWillReviveSettingValue)
     else
@@ -205,15 +205,15 @@ Reincarnation.UpdateSetting = function(event)
     end
 
     global.reincarnationChanceList = {
-        { name = ReincarnationType.tree, chance = global.rawTreeOnDeathChance },
+        { name = ReincarnationType.tree,        chance = global.rawTreeOnDeathChance },
         { name = ReincarnationType.burningTree, chance = global.rawBurningTreeOnDeathChance },
-        { name = ReincarnationType.rock, chance = global.rawRockOnDeathChance },
-        { name = ReincarnationType.cliff, chance = global.rawCliffOnDeathChance }
+        { name = ReincarnationType.rock,        chance = global.rawRockOnDeathChance },
+        { name = ReincarnationType.cliff,       chance = global.rawCliffOnDeathChance }
     }
     RandomChance.NormaliseChanceList(global.reincarnationChanceList, "chance", true)
 
     global.wormReincarnationChanceList = {
-        { name = ReincarnationType.rock, chance = global.rawWormRockOnDeathChance },
+        { name = ReincarnationType.rock,  chance = global.rawWormRockOnDeathChance },
         { name = ReincarnationType.cliff, chance = global.rawWormCliffOnDeathChance },
         { name = ReincarnationType.water, chance = global.rawWormWaterOnDeathChance }
     }
@@ -301,9 +301,6 @@ Reincarnation.ProcessReincarnationQueue = function()
     end
 
     for k, details in pairs(global.reincarnationQueue) do
-        -- Remove the entry from the queue first thing. As we might quit the loop mid processing.
-        global.reincarnationQueue[k] = nil
-
         -- Do the reincarnation.
         if details.type == ReincarnationType.tree then
             BiomeTrees.AddBiomeTreeNearPosition(details.surface, details.position, 2)
@@ -323,9 +320,22 @@ Reincarnation.ProcessReincarnationQueue = function()
         end
         doneThisCycle = doneThisCycle + 1
 
+
         -- Check if we have completed all the reincarnations we need to do
         if doneThisCycle >= tasksThisCycle then
             break
+        end
+    end
+
+    -- Remove entries from the revive queue outside of the processing loop. As some edge case processing can add new entries to it and this can cause Lua errors. Errors only seen in MP, not reproducible.
+    local entriesToBeRemoved = doneThisCycle
+    if entriesToBeRemoved > 0 then
+        for k in pairs(global.reincarnationQueue) do
+            global.reincarnationQueue[k] = nil
+            entriesToBeRemoved = entriesToBeRemoved - 1
+            if entriesToBeRemoved == 0 then
+                break
+            end
         end
     end
 
@@ -341,13 +351,13 @@ end
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterWontBeRevived_Event
 Reincarnation.OnBiterWontBeRevived = function(event)
-    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.reviveType--[[@as DeadEntityTypes]] , event.entityName, event.force, event.forceIndex)
+    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(event.entity, event.tick, event.reviveType --[[@as DeadEntityTypes]], event.entityName, event.force, event.forceIndex)
 end
 
 --- Called when the Biter Revive mod raises this custom event. This is when the entity has first died and its been decided it won't try to be revived in the future.
 ---@param event BiterRevivedFailed_Event
 Reincarnation.OnBiterReviveFailed = function(event)
-    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(nil, event.tick, event.reviveType--[[@as DeadEntityTypes]] , event.prototypeName, event.force, event.forceIndex, event.surface, event.position, event.orientation)
+    Reincarnation.CheckAndAddDeadEntityToReincarnationQueue(nil, event.tick, event.reviveType --[[@as DeadEntityTypes]], event.prototypeName, event.force, event.forceIndex, event.surface, event.position, event.orientation)
 end
 
 --- Record a valid entity to the reincarnation queue if it happens to win the chance lottery.
@@ -438,14 +448,14 @@ Reincarnation.CheckAndAddDeadEntityToReincarnationQueue = function(entity, curre
     ---@type ReincarnationQueueEntry
     local details = {
         loggedTick = currentTick,
-        surface = entity_surface or entity ~= nil and entity.surface --[[@as LuaSurface]] ,
-        position = entity_position or entity ~= nil and entity.position --[[@as MapPosition]] ,
+        surface = entity_surface or entity ~= nil and entity.surface --[[@as LuaSurface]],
+        position = entity_position or entity ~= nil and entity.position --[[@as MapPosition]],
         type = selectedReincarnationType.name,
-        orientation = entity_orientation or entity ~= nil and entity.orientation --[[@as RealOrientation]] ,
+        orientation = entity_orientation or entity ~= nil and entity.orientation --[[@as RealOrientation]],
         wormTileSize = wormTileSize
     }
     global.reincarnationQueueNextInsertIndex = global.reincarnationQueueNextInsertIndex + 1
-    global.reincarnationQueue[global.reincarnationQueueNextInsertIndex--[[@as uint]] ] = details
+    global.reincarnationQueue[ global.reincarnationQueueNextInsertIndex --[[@as uint]] ] = details
     global.reincarnationsQueueCurrentSize = global.reincarnationsQueueCurrentSize + 1
 end
 

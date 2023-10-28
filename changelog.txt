@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 20.0.22
+Date: 2022-10-28
+  Features:
+  Changes:
+  Bugfixes:
+    - Fix occasional crash with revive queue processing from Lua error: reincarnation.lua line 303 errored: invalid key to 'next'
+  Info:
+---------------------------------------------------------------------------------------------------
 Version: 20.0.21
 Date: 2022-11-07
   Features:
