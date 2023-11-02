@@ -1,6 +1,8 @@
 TODO
 ----
 
+    - Resolve Sumneko warnings for new version.
+	- Add mod setting to control the type of water created. Dropdown of the various types dynamically to try and handle modded waters. Maybe do as a delayed setting (middle one). Copy water tile selection from Zombie Engineer Utility version and leave note to replace after a future Utility update. Need to check what sort of water alien biomes adds and that we detect it appropriately.
 
 
 
